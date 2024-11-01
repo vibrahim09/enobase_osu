@@ -7,15 +7,11 @@ To streamline the onboarding process and help users get started quickly, we want
 1. Communicate with an LLM to describe the business application they want to create.
 2. The LLM will then interact with the no-code tools to generate a fully functioning application based on the user’s prompt.
    Built-in rag to retrieve relevant content 
-  Generate pages with blocks content
-  Generate dynamic data model
-  Generate queries, formulas, and charts based on the dynamic data models
-  Generate custom component based on a design system (i.e. like https://v0.dev)
-Note: This is an international project partner located in Europe. Mind the time difference for communication.
-
-
-
-
+   Generate pages with blocks content
+   Generate dynamic data model
+   Generate queries, formulas, and charts based on the dynamic data models
+   Generate custom component based on a design system (i.e. like https://v0.dev)
+   
 
 ### Objectives
 Build a conversational interface where users can discuss their requirements with an LLM.
