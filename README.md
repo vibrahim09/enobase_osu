@@ -40,5 +40,5 @@ docker exec -it my-postgres-container bash
 ```
 THEN:
 ```bash
-psql -h localhost -p 5432 -U postgres -d northwind
+psql -h localhost -p 5432 -U postgres -d <first 3 characters of the container id>
 ```
