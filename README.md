@@ -22,3 +22,19 @@ Demo the system’s capabilities.
 ### Motivations
 Enobase aims to simplify the process of building and customizing business tools, enabling companies to efficiently manage their operations. By integrating LLMs, we can lower the barrier to entry for users, allowing them to create complex applications with minimal technical knowledge. This project has the potential to significantly improve productivity for businesses, solving real-world problems by making enterprise tools more accessible and adaptable.
 
+### Northwind DB Instructions
+#### Build the Docker Image 
+```bash
+docker build -t my-postgres-image .
+```
+
+#### Run the Docker Container
+```bash
+docker run -d --name my-postgres-container -p 5432:5432 my-postgres-image
+```
+Verify the container is running: `docker ps`
+
+#### Access the Database
+```bash
+psql -h localhost -p 5432 -U postgres -d northwind
+```
