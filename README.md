@@ -36,9 +36,9 @@ Verify the container is running: `docker ps`
 
 #### Access the Database
 ```bash
-psql -h localhost -p 5432 -U postgres -d northwind
-```
-OR
-```bash
 docker exec -it my-postgres-container bash
+```
+THEN:
+```bash
+psql -h localhost -p 5432 -U postgres -d northwind
 ```
