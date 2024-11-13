@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from './layout';
 import DataTable from '../components/ui/datatable';
 import Spinner from '../components/ui/spinner';
-import Sidebar from '../components/ui/sidebar';
+import Sidebar from '../components/ui/modelSidebar';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { PrismaModel } from '@/types/prisma';
 import useSWR from 'swr';
@@ -64,7 +64,7 @@ const HomePage = () => {
   return (
     <Layout>
       
-      <ScrollArea className="h-screen w-full rounded-md border p-4">
+      <ScrollArea className="h-screen w-full align-middle rounded-md border p-4">
         <div className="flex flex-col md:flex-row">
           <Sidebar models={models} onAddModel={handleAddModel} onRemoveModel={handleRemoveModel} />
           <div className="flex-1 p-4 space-y-6">
