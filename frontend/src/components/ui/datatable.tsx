@@ -7,6 +7,8 @@ import { motion } from 'framer-motion';
 import useSWR from 'swr';
 import Spinner from './spinner'; // Ensure you have a Spinner component
 import { ScrollArea, ScrollBar } from './scroll-area'; // Import Shadcn's ScrollArea components
+import { ChevronUp } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 interface Column<T> {
   header: string;
@@ -112,10 +114,10 @@ const DataTable = <T,>({ columns, dataUrl, initialVisibleRows = 10 }: DataTableP
         <div className="flex justify-center mt-2 mb-2">
           <button
             onClick={toggleExpand}
-            className="w-full h-full bg-gray-200 text-white rounded hover:bg-gray-300 focus:outline-none"
+            className="w-full h-full flex justify-center text-gray rounded hover:bg-gray-100 focus:outline-none"
           >
-            {isExpanded ? 'Show Less' : 'Show More'}
-          </button>
+              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
         </div>
       )}
             <ScrollBar orientation="horizontal" />

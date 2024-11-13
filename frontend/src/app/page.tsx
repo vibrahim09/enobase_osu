@@ -9,7 +9,8 @@ import Spinner from '../components/ui/spinner';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { PrismaModel } from '@/types/prisma';
 import useSWR from 'swr';
-import ModelSidebar from '../components/ui/modelSidebar';
+import {ModelSidebar} from '../components/ui/model-sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -65,6 +66,7 @@ const HomePage = () => {
   return (
     <Layout>
       <ScrollArea className="h-screen w-full align-middle rounded-md border p-4">
+        <SidebarProvider>
         <div className="flex flex-col md:flex-row">
           <ModelSidebar models={models} onAddModel={handleAddModel} onRemoveModel={handleRemoveModel} />
           <div className="flex-1 p-4 space-y-6">
@@ -83,6 +85,7 @@ const HomePage = () => {
             )}
           </div>
         </div>
+        </SidebarProvider>
       </ScrollArea>
     </Layout>
   );
