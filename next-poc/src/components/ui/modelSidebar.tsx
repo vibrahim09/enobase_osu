@@ -13,7 +13,7 @@ interface SidebarProps {
   onRemoveModel: (model: PrismaModel) => void; // Callback to remove a model
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ models, onAddModel, onRemoveModel }) => {
+const ModelSidebar: React.FC<SidebarProps> = ({ models, onAddModel, onRemoveModel }) => {
   const [allExpanded, setAllExpanded] = useState<boolean>(false);
   const [addedModels, setAddedModels] = useState<Set<string>>(new Set());
   const pendingUpdates = useRef<{ add: PrismaModel[]; remove: PrismaModel[] }>({ add: [], remove: [] });
@@ -110,4 +110,4 @@ const Sidebar: React.FC<SidebarProps> = ({ models, onAddModel, onRemoveModel }) 
   );
 };
 
-export default Sidebar;
+export default ModelSidebar;
