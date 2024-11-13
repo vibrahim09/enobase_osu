@@ -78,8 +78,8 @@ const DataTable = <T,>({ columns, dataUrl, initialVisibleRows = 10 }: DataTableP
       style={{ x: position.x, y: position.y }}
       whileDrag={{ cursor: "grabbing" }}
     >
-      <ScrollArea className="w-auto whitespace-nowrap rounded-md border">
-          <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
+      <ScrollArea className="w-auto whitespace-nowrap rounded-md border-0">
+          <table className="min-w-full divide-y divide-gray-200 border-0" >
             <thead>
               <tr>
                 {columns.map((column, index) => (

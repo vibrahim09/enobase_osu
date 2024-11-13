@@ -1,7 +1,6 @@
 import './globals.css';
 import { ReactNode } from 'react';
 import Head from 'next/head';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

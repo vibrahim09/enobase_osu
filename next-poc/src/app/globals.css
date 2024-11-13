@@ -2,8 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+  letter-spacing: 0.5px;
 }
 
 @layer base {
@@ -65,13 +69,19 @@ body {
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
   body {
     @apply bg-background text-foreground;
+    margin: 0;
+    padding: 0;
   }
 }
 
 .sidebar-container {
   height: 100vh;
-  overflow-y: auto;
+  overflow-y: var(--foreground);
+  background-color: var(--card);
+  /* border-right: 1px solid var(--border); */
+  padding: 1rem;
 }
