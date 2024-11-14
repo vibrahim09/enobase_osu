@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 body {
   font-family: var(--font-geist-sans);
@@ -39,7 +38,7 @@ body {
     --radius: 0.5rem;
   }
   .dark {
-    --background: 240 5.9% 13%;
+    --background: 240 5.9% 15%;
     --foreground: 240 4.8% 95.9%;
     --card: 224 71.4% 4.1%;
     --card-foreground: 210 20% 98%;
@@ -116,7 +115,7 @@ body {
   .dark {
     --datatable-background: 240 5.9% 13%;
     --datatable-foreground: 240 4.8% 95.9%;
-    --datatable-primary: 224.3 10% 11%;
+    --datatable-primary: 224.3 10% 12%;
     --datatable-primary-foreground: 0 0% 100%;
     --datatable-accent: 240 3.7% 15.9%;
     --datatable-accent-foreground: 240 4.8% 95.9%;
@@ -133,6 +132,16 @@ body {
   .dark {
     --gradient-light: #4a4a4a;
     --gradient-dark: #e0e0e0;
+  }
+}
+
+@layer base {
+  :root {
+    --highlight: 60 97% 90%; /* Light yellow for light mode */
+  }
+
+  .dark {
+    --highlight: 210 60% 40%; /* Pleasant blue for dark mode */
   }
 }
 
