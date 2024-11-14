@@ -1,21 +1,25 @@
 // src/app/page.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import Layout from './layout';
 import DataTable from '../components/ui/datatable';
 import Spinner from '../components/ui/spinner';
-//import Sidebar from '../components/ui/modelSidebar'; 
-import { ScrollArea } from '../components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '../components/ui/scroll-area';
 import { PrismaModel } from '@/types/prisma';
 import useSWR from 'swr';
-import {ModelSidebar} from '../components/ui/model-sidebar';
+import { ModelSidebar } from '../components/ui/model-sidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const HomePage = () => {
   const [activeModels, setActiveModels] = useState<PrismaModel[]>([]);
+  const [positions, setPositions] = useState<{ [key: string]: { x: number; y: number } }>({});
+  const isDragging = useRef<boolean>(false);
+  const dragStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const currentModel = useRef<string | null>(null);
+
   // Fetch models
   const { data: models, error: modelError } = useSWR<PrismaModel[]>('/api/models', fetcher);
 
@@ -32,6 +36,39 @@ const HomePage = () => {
   // Function to handle removing a DataTable
   const handleRemoveModel = (model: PrismaModel) => {
     setActiveModels((prevModels) => prevModels.filter((m) => m.name !== model.name));
+  };
+
+  // Handle mouse down for dragging
+  const handleMouseDown = (event: React.MouseEvent, modelName: string) => {
+    isDragging.current = true;
+    dragStart.current = { x: event.clientX, y: event.clientY };
+    currentModel.current = modelName;
+    document.body.style.userSelect = 'none'; // Prevent text selection
+    document.body.style.cursor = 'grab';
+  };
+
+  // Handle mouse move for dragging
+  const handleMouseMove = (event: React.MouseEvent) => {
+    if (!isDragging.current || !currentModel.current) return;
+    const dx = event.clientX - dragStart.current.x;
+    const dy = event.clientY - dragStart.current.y;
+    setPositions((prevPositions) => ({
+      ...prevPositions,
+      [currentModel.current!]: {
+        x: (prevPositions[currentModel.current!]?.x || 0) + dx,
+        y: (prevPositions[currentModel.current!]?.y || 0) + dy,
+      },
+    }));
+    dragStart.current = { x: event.clientX, y: event.clientY };
+    document.body.style.cursor = 'grabbing';
+  };
+
+  // Handle mouse up to stop dragging
+  const handleMouseUp = () => {
+    isDragging.current = false;
+    currentModel.current = null;
+    document.body.style.userSelect = ''; // Re-enable text selection
+    document.body.style.cursor = 'default';
   };
 
   if (!models) {
@@ -65,27 +102,47 @@ const HomePage = () => {
 
   return (
     <Layout>
-      <ScrollArea className="h-screen w-full align-middle rounded-md border p-4">
+      <ScrollArea className="h-screen w-full align-middle rounded-md">
         <SidebarProvider>
-        <div className="flex flex-col md:flex-row">
-          <ModelSidebar models={models} onAddModel={handleAddModel} onRemoveModel={handleRemoveModel} />
-          <div className="flex-1 p-4 space-y-6">
-            {activeModels.map((model) => (
-              <DataTable
-                key={model.name}
-                columns={getColumns(model)}
-                dataUrl={`/api/data/${model.name}`}
-                initialVisibleRows={10}
-              />
-            ))}
-            {activeModels.length === 0 && (
-              <div className="text-center text-gray-500">
-                Select a table from the sidebar to view its data.
+          <div className="flex flex-col md:flex-row h-full w-full">
+            <ModelSidebar models={models} onAddModel={handleAddModel} onRemoveModel={handleRemoveModel} />
+            <div
+              className="flex-1 overflow-auto relative hide-scrollbar"
+              style={{
+                backgroundSize: '75px 75px',
+                backgroundImage: 'linear-gradient(to right, #e0e0e0 1px, transparent 1px), linear-gradient(to bottom, #e0e0e0 1px, transparent 1px)',
+              }}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              <div className="p-4 space-y-6">
+                {activeModels.map((model) => (
+                  <div
+                    key={model.name}
+                    className="absolute"
+                    style={{
+                      transform: `translate(${positions[model.name]?.x || 0}px, ${positions[model.name]?.y || 0}px)`,
+                    }}
+                    onMouseDown={(e) => handleMouseDown(e, model.name)}
+                  >
+                    <DataTable
+                      columns={getColumns(model)}
+                      dataUrl={`/api/data/${model.name}`}
+                      initialVisibleRows={10}
+                    />
+                  </div>
+                ))}
+                {activeModels.length === 0 && (
+                  <div className="text-center text-gray-500">
+                    Select a table from the sidebar to view its data.
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
         </SidebarProvider>
+        {/* <ScrollBar orientation='horizontal'/> */}
       </ScrollArea>
     </Layout>
   );

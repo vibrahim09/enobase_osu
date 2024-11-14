@@ -7,8 +7,7 @@ import { motion } from 'framer-motion';
 import useSWR from 'swr';
 import Spinner from './spinner'; // Ensure you have a Spinner component
 import { ScrollArea, ScrollBar } from './scroll-area'; // Import Shadcn's ScrollArea components
-import { ChevronUp } from 'lucide-react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown } from 'lucide-react'; // Import Lucide icons
 
 interface Column<T> {
   header: string;
@@ -30,7 +29,9 @@ const fetcher = (url: string) => fetch(url).then((res) => {
 
 const DataTable = <T,>({ columns, dataUrl, initialVisibleRows = 10 }: DataTableProps<T>) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
-  const [position, setPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Extract model name from dataUrl
+  const modelName = (dataUrl.split('/').pop() || 'Model').replace(/_/g, ' ');
 
   // Fetch data using SWR
   const { data, error } = useSWR<T[]>(dataUrl, fetcher);
@@ -66,61 +67,58 @@ const DataTable = <T,>({ columns, dataUrl, initialVisibleRows = 10 }: DataTableP
     setIsExpanded((prev) => !prev);
   };
 
-  // Handler to update position on drag end
-  const handleDragEnd = (_event: any, info: any) => {
-    setPosition({ x: position.x + info.delta.x, y: position.y + info.delta.y });
-  };
-
   return (
-    <motion.div
-      className="flex justify-center pb-6 pt-6 relative z-50"
-      drag
-      dragMomentum={false}
-      onDragEnd={handleDragEnd}
-      style={{ x: position.x, y: position.y }}
-      whileDrag={{ cursor: "grabbing" }}
-    >
+    <motion.div className="flex justify-center pb-6 pt-6 relative z-1">
       <ScrollArea className="w-auto whitespace-nowrap rounded-md border-0">
-          <table className="min-w-full divide-y divide-gray-200 border-0" >
-            <thead>
-              <tr>
-                {columns.map((column, index) => (
-                  <th
-                    key={index}
-                    className="px-3 py-2 bg-gray-50 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                    {column.header}
-                  </th>
+        <table className="min-w-full divide-y divide-gray-200 border-0">
+          <thead>
+            <tr>
+              <th
+                colSpan={columns.length}
+                className="px-3 py-2 bg-gray-50 text-center text-lg font-semibold text-gray-700"
+              >
+                {modelName}
+              </th>
+            </tr>
+            <tr>
+              {columns.map((column, index) => (
+                <th
+                  key={index}
+                  className="px-3 py-2 bg-gray-50 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {column.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {visibleData.map((row, rowIndex) => (
+              <tr key={rowIndex} className="bg-white even:bg-gray-50 hover:bg-gray-100">
+                {columns.map((column, colIndex) => (
+                  <td
+                    key={colIndex}
+                    className="px-3 py-2 whitespace-nowrap text-xs text-gray-900"
+                  >
+                    {row[column.accessor]?.toString() || '-'}
+                  </td>
                 ))}
               </tr>
-            </thead>
-            <tbody>
-              {visibleData.map((row, rowIndex) => (
-                <tr key={rowIndex} className="bg-white even:bg-gray-50 hover:bg-gray-100">
-                  {columns.map((column, colIndex) => (
-                    <td
-                      key={colIndex}
-                      className="px-3 py-2 whitespace-nowrap text-xs text-gray-900"
-                    >
-                      {row[column.accessor]?.toString() || '-'}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-      
-      {/* Toggle Button */}
-      {data.length > initialVisibleRows && (
-        <div className="flex justify-center mt-2 mb-2">
-          <button
-            onClick={toggleExpand}
-            className="w-full h-full flex justify-center text-gray rounded hover:bg-gray-100 focus:outline-none"
-          >
+            ))}
+          </tbody>
+        </table>
+
+        {/* Toggle Button */}
+        {data.length > initialVisibleRows && (
+          <div className="flex justify-center mt-2 mb-2">
+            <button
+              onClick={toggleExpand}
+              className="w-full h-full flex justify-center text-gray rounded hover:bg-gray-100 focus:outline-none"
+            >
               {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </button>
-        </div>
-      )}
-            <ScrollBar orientation="horizontal" />
+            </button>
+          </div>
+        )}
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
     </motion.div>
   );
