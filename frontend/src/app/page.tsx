@@ -124,18 +124,18 @@ const HomePage = () => {
           <div className="flex flex-col md:flex-row h-full w-full">
             <ModelSidebar models={models} onAddModel={handleAddModel} onRemoveModel={handleRemoveModel} />
             <div
-              className="flex-1 overflow-auto relative hide-scrollbar"
-              style={{
-                backgroundSize: '75px 75px',
-                backgroundImage: `
-                  linear-gradient(to right, var(--gradient-light) 1px, transparent 1px),
-                  linear-gradient(to bottom, var(--gradient-light) 1px, transparent 1px)
-                `,
-              }}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-            >
+            className="flex-1 overflow-auto relative hide-scrollbar"
+            style={{
+              backgroundSize: '70px 70px',
+              backgroundImage: `
+                linear-gradient(to right, var(--gradient-light) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--gradient-light) 1px, transparent 1px)
+              `,
+            }}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
               <div className="p-4 space-y-6">
                 {activeModels.map((model) => (
                   <div

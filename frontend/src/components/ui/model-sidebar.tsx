@@ -78,7 +78,7 @@ export function ModelSidebar({ models, onAddModel, onRemoveModel }: SidebarProps
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="hide-scrollbar">
         <SidebarGroup>
           <SidebarMenu>
             {models.map((model) => (
