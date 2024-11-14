@@ -1,7 +1,7 @@
 // src/app/page.tsx
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Layout from './layout';
 import DataTable from '../components/ui/datatable';
 import Spinner from '../components/ui/spinner';
@@ -10,6 +10,7 @@ import { PrismaModel } from '@/types/prisma';
 import useSWR from 'swr';
 import { ModelSidebar } from '../components/ui/model-sidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { MoonIcon, SunIcon } from 'lucide-react';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -19,6 +20,7 @@ const HomePage = () => {
   const isDragging = useRef<boolean>(false);
   const dragStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const currentModel = useRef<string | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
   // Fetch models
   const { data: models, error: modelError } = useSWR<PrismaModel[]>('/api/models', fetcher);
@@ -71,6 +73,15 @@ const HomePage = () => {
     document.body.style.cursor = 'default';
   };
 
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setIsDarkMode((prev) => !prev);
+  };
+
+  useEffect(() => {
+    document.body.classList.toggle('dark', isDarkMode);
+  }, [isDarkMode]);
+
   if (!models) {
     return (
       <Layout>
@@ -102,6 +113,12 @@ const HomePage = () => {
 
   return (
     <Layout>
+      <button
+        onClick={toggleDarkMode}
+        className="fixed top-4 right-4 z-10 p-2 rounded"
+      >
+        {isDarkMode ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
+      </button>
       <ScrollArea className="h-screen w-full align-middle rounded-md">
         <SidebarProvider>
           <div className="flex flex-col md:flex-row h-full w-full">
@@ -110,7 +127,10 @@ const HomePage = () => {
               className="flex-1 overflow-auto relative hide-scrollbar"
               style={{
                 backgroundSize: '75px 75px',
-                backgroundImage: 'linear-gradient(to right, #e0e0e0 1px, transparent 1px), linear-gradient(to bottom, #e0e0e0 1px, transparent 1px)',
+                backgroundImage: `
+                  linear-gradient(to right, var(--gradient-light) 1px, transparent 1px),
+                  linear-gradient(to bottom, var(--gradient-light) 1px, transparent 1px)
+                `,
               }}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
@@ -134,7 +154,7 @@ const HomePage = () => {
                   </div>
                 ))}
                 {activeModels.length === 0 && (
-                  <div className="text-center text-gray-500">
+                  <div className="z-50 text-center text-gray-500">
                     Select a table from the sidebar to view its data.
                   </div>
                 )}
@@ -142,7 +162,6 @@ const HomePage = () => {
             </div>
           </div>
         </SidebarProvider>
-        {/* <ScrollBar orientation='horizontal'/> */}
       </ScrollArea>
     </Layout>
   );

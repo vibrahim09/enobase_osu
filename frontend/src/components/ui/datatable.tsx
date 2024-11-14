@@ -30,13 +30,10 @@ const fetcher = (url: string) => fetch(url).then((res) => {
 const DataTable = <T,>({ columns, dataUrl, initialVisibleRows = 10 }: DataTableProps<T>) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
-  // Extract model name from dataUrl
   const modelName = (dataUrl.split('/').pop() || 'Model').replace(/_/g, ' ');
 
-  // Fetch data using SWR
   const { data, error } = useSWR<T[]>(dataUrl, fetcher);
 
-  // Debugging: Log data and error
   useEffect(() => {
     console.log(`DataTable fetching from: ${dataUrl}`);
     console.log('Data:', data);
@@ -59,10 +56,8 @@ const DataTable = <T,>({ columns, dataUrl, initialVisibleRows = 10 }: DataTableP
     return <div className="text-red-500">Invalid data format received.</div>;
   }
 
-  // Determine the data to display based on the expansion state
   const visibleData = isExpanded ? data : data.slice(0, initialVisibleRows);
 
-  // Handler to toggle expansion state
   const toggleExpand = () => {
     setIsExpanded((prev) => !prev);
   };
@@ -70,12 +65,22 @@ const DataTable = <T,>({ columns, dataUrl, initialVisibleRows = 10 }: DataTableP
   return (
     <motion.div className="flex justify-center pb-6 pt-6 relative z-1">
       <ScrollArea className="w-auto whitespace-nowrap rounded-md border-0">
-        <table className="min-w-full divide-y divide-gray-200 border-0">
+        <table
+          className="data-table min-w-full divide-y border-0"
+          style={{
+            backgroundColor: 'hsl(var(--datatable-background))',
+            color: 'hsl(var(--datatable-foreground))',
+          }}
+        >
           <thead>
             <tr>
               <th
                 colSpan={columns.length}
-                className="px-3 py-2 bg-gray-50 text-center text-lg font-semibold text-gray-700"
+                className="px-3 py-2 text-center text-lg font-semibold"
+                style={{
+                  backgroundColor: 'hsl(var(--datatable-primary))',
+                  color: 'hsl(var(--datatable-primary-foreground))',
+                }}
               >
                 {modelName}
               </th>
@@ -84,7 +89,11 @@ const DataTable = <T,>({ columns, dataUrl, initialVisibleRows = 10 }: DataTableP
               {columns.map((column, index) => (
                 <th
                   key={index}
-                  className="px-3 py-2 bg-gray-50 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-3 py-2 text-left text-sm font-medium uppercase tracking-wider"
+                  style={{
+                    backgroundColor: 'hsl(var(--datatable-background))',
+                    color: 'hsl(var(--datatable-foreground))',
+                  }}
                 >
                   {column.header}
                 </th>
@@ -93,11 +102,22 @@ const DataTable = <T,>({ columns, dataUrl, initialVisibleRows = 10 }: DataTableP
           </thead>
           <tbody>
             {visibleData.map((row, rowIndex) => (
-              <tr key={rowIndex} className="bg-white even:bg-gray-50 hover:bg-gray-100">
+              <tr
+                key={rowIndex}
+                className="hover:bg-opacity-80"
+                style={{
+                  backgroundColor:
+                    rowIndex % 2 === 0
+                      ? 'hsl(var(--datatable-accent))'
+                      : 'hsl(var(--datatable-background))',
+                  color: 'hsl(var(--datatable-foreground))',
+                }}
+              >
                 {columns.map((column, colIndex) => (
                   <td
                     key={colIndex}
-                    className="px-3 py-2 whitespace-nowrap text-xs text-gray-900"
+                    className="px-3 py-2 whitespace-nowrap text-xs"
+                    style={{ color: 'hsl(var(--datatable-accent-foreground))' }}
                   >
                     {row[column.accessor]?.toString() || '-'}
                   </td>
@@ -107,12 +127,15 @@ const DataTable = <T,>({ columns, dataUrl, initialVisibleRows = 10 }: DataTableP
           </tbody>
         </table>
 
-        {/* Toggle Button */}
         {data.length > initialVisibleRows && (
-          <div className="flex justify-center mt-2 mb-2">
+          <div className="flex justify-center mt-0 mb-2">
             <button
               onClick={toggleExpand}
-              className="w-full h-full flex justify-center text-gray rounded hover:bg-gray-100 focus:outline-none"
+              className="w-full h-full flex justify-center rounded focus:outline-none"
+              style={{
+                color: 'hsl(var(--datatable-primary-foreground))',
+                backgroundColor: 'hsl(var(--datatable-primary))',
+              }}
             >
               {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -123,5 +146,6 @@ const DataTable = <T,>({ columns, dataUrl, initialVisibleRows = 10 }: DataTableP
     </motion.div>
   );
 };
+
 
 export default DataTable;

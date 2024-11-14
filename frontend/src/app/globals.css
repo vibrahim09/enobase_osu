@@ -6,7 +6,6 @@
 
 body {
   font-family: var(--font-geist-sans);
-  /* font-family: 'Inter', Arial, Helvetica, sans-serif; */
   line-height: 1.6;
   letter-spacing: 0.5px;
 }
@@ -40,8 +39,8 @@ body {
     --radius: 0.5rem;
   }
   .dark {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
+    --background: 240 5.9% 13%;
+    --foreground: 240 4.8% 95.9%;
     --card: 224 71.4% 4.1%;
     --card-foreground: 210 20% 98%;
     --popover: 224 71.4% 4.1%;
@@ -92,7 +91,7 @@ body {
   }
 
   .dark {
-    --sidebar-background: 240 5.9% 10%;
+    --sidebar-background: 240 5.9% 13%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -103,12 +102,45 @@ body {
   }
 }
 
+@layer base {
+  :root {
+    --datatable-background: 0 0% 98%;
+    --datatable-foreground: 240 5.3% 26.1%;
+    --datatable-primary: 240 5.9% 95%;
+    --datatable-primary-foreground: 240 5.3% 26.1%;
+    --datatable-accent: 240 4.8% 95.9%;
+    --datatable-accent-foreground: 240 5.9% 10%;
+    --datatable-border: 220 13% 91%;
+  }
+
+  .dark {
+    --datatable-background: 240 5.9% 13%;
+    --datatable-foreground: 240 4.8% 95.9%;
+    --datatable-primary: 224.3 10% 11%;
+    --datatable-primary-foreground: 0 0% 100%;
+    --datatable-accent: 240 3.7% 15.9%;
+    --datatable-accent-foreground: 240 4.8% 95.9%;
+    --datatable-border: 240 3.7% 15.9%;
+  }
+}
+
+@layer base {
+  :root {
+    --gradient-light: #e0e0e0;
+    --gradient-dark: #4a4a4a;
+  }
+
+  .dark {
+    --gradient-light: #4a4a4a;
+    --gradient-dark: #e0e0e0;
+  }
+}
+
 
 .sidebar-container {
   height: 100vh;
   overflow-y: var(--foreground);
   background-color: var(--card);
-  /* border-right: 1px solid var(--border); */
   padding: 1rem;
 }
 
