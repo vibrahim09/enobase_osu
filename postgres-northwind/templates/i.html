@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CHAT DATABASE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: lightblue ;
+        }
+        h1 {
+            color: darkgreen;
+        }
+        table{
+            width: 100%;
+            border-collapse:collapse;
+            margin-top: 20px;
+        }
+        th, td{
+            border : 1px solid black;
+            padding: 8px;
+        }
+        th{
+            background-color: #f2f2f2;
+            text-align: left;
+        }
+        tr:nth-child(even){
+            background-color: #f9f9f9;
+        }
+        tr:hover{
+            background-color: #ddd;
+        }
+        form{
+            margin-bottom: 20px;
+        }
+        input[type="submit"]{
+            padding: 10px  20 px;
+        }
+        pre {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>CHAT DB</h1>
+    <form method = "POST">
+        <input type="text" name="query" placeholder="Enter your query here" required>
+        <input type="submit" value="Run Query">
+    </form>
+    <h2>Query</h2>
+    <pre>{{ query }}</pre>
+    <h2>Result</h2>
+    <table>
+        <thead>
+            <tr>
+                {% if result and result[0] %}
+                    {% for col in result[0] %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                {% endif %}
+                
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in result %}
+                <tr>
+                    {% for col in row %}
+                        <td>{{ col if col is string else ''.join(col) }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CHAT DATABASE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f8ff ;
+            color: #333;
+        }
+        h1 {
+            color: blue;
+        }
+        
+        form{
+            margin-bottom: 20px;
+        }
+        input[type="text"]{
+            width: 80%;
+            padding:10px;
+            margin-right: 10px;
+        }
+        input[type="submit"]{
+            padding: 10px  20px;
+        }
+        pre {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>CHAT DB</h1>
+    <form method = "POST">
+        <input type="text" name="query" placeholder="Enter your query here" required>
+        <input type="submit" value="Run Query">
+    </form>
+    <h2>Query</h2>
+    <pre>{{ query }}</pre>
+    <h2>Result</h2>
+    <pre>
+        {% for row in result %}
+            {{ row }}
+            
+        {% endfor %}
+    </pre>
+    
+</body>
+</html>
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LLM Query Results</title>
+    <style>
+        body {
+            background-color: #f0f8ff; /* Light blue background */
+            color: #333; /* Text color */
+            font-family: Arial, sans-serif; /* Font style */
+        }
+        h1 {
+            color: #0056b3; /* Heading color */
+        }
+        pre {
+            background-color: #e0e0e0; /* Light grey background for preformatted text */
+            padding: 10px;
+            border-radius: 5px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>LLM Query Results</h1>
+    <form method="POST">
+        <input type="text" name="query" placeholder="Enter your query here" required>
+        <input type="submit" value="Run Query">
+    </form>
+    <h2>Query</h2>
+    <pre>{{ query }}</pre>
+    <h2>Result</h2>
+    <pre>{{ result }}</pre>
+</body>
+</html>
