@@ -70,7 +70,7 @@ export function ModelSidebar({ models, onAddModel, onRemoveModel }: SidebarProps
                   <GalleryVerticalEnd className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Models</span>
+                  <span className="font-semibold">Tables</span>
                   <span className=""></span>
                 </div>
               </a>
@@ -136,7 +136,6 @@ export function ModelSidebar({ models, onAddModel, onRemoveModel }: SidebarProps
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarRail />
     </Sidebar>
   )
 }

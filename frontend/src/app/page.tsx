@@ -9,8 +9,10 @@ import { ScrollArea, ScrollBar } from '../components/ui/scroll-area';
 import { PrismaModel } from '@/types/prisma';
 import useSWR from 'swr';
 import { ModelSidebar } from '../components/ui/model-sidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { MoonIcon, SunIcon } from 'lucide-react';
+import ChatSidebar from '../components/ui/chat-sidebar';
+import LLMDataTable from '@/components/ui/llm-datatable';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -21,6 +23,16 @@ const HomePage = () => {
   const dragStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const currentModel = useRef<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [llmData, setLlmData] = useState<{ prompt: string; response: Record<string, string> } | null>(null);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true); // State to track sidebar visibility
+
+  const toggleSidebar = () => {
+    setIsSidebarVisible((prev) => !prev);
+  };
+
+  const handleLlmResponse = (data: { prompt: string; response: Record<string, string> }) => {
+    setLlmData(data);
+  };
 
   // Fetch models
   const { data: models, error: modelError } = useSWR<PrismaModel[]>('/api/models', fetcher);
@@ -113,29 +125,27 @@ const HomePage = () => {
 
   return (
     <Layout>
-      <button
-        onClick={toggleDarkMode}
-        className="fixed top-4 right-4 z-10 p-2 rounded"
-      >
-        {isDarkMode ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
-      </button>
       <ScrollArea className="h-screen w-full align-middle rounded-md">
+        <div
+          className="flex-1 overflow-auto relative hide-scrollbar"
+          style={{
+            backgroundSize: '70px 70px',
+            backgroundImage: `
+              linear-gradient(to right, var(--gradient-light) 1px, transparent 1px),
+              linear-gradient(to bottom, var(--gradient-light) 1px, transparent 1px)
+            `,
+          }}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
         <SidebarProvider>
+        <ModelSidebar models={models} onAddModel={handleAddModel} onRemoveModel={handleRemoveModel} />
           <div className="flex flex-col md:flex-row h-full w-full">
-            <ModelSidebar models={models} onAddModel={handleAddModel} onRemoveModel={handleRemoveModel} />
-            <div
-            className="flex-1 overflow-auto relative hide-scrollbar"
-            style={{
-              backgroundSize: '70px 70px',
-              backgroundImage: `
-                linear-gradient(to right, var(--gradient-light) 1px, transparent 1px),
-                linear-gradient(to bottom, var(--gradient-light) 1px, transparent 1px)
-              `,
-            }}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          >
+              <div className='p-3'>
+                <SidebarTrigger onClick={toggleSidebar} />
+              </div>
+              
               <div className="p-4 space-y-6">
                 {activeModels.map((model) => (
                   <div
@@ -153,15 +163,41 @@ const HomePage = () => {
                     />
                   </div>
                 ))}
-                {activeModels.length === 0 && (
-                  <div className="z-50 text-center text-gray-500">
-                    Select a table from the sidebar to view its data.
+                  {activeModels.length === 0 && isSidebarVisible && (
+                    <div className="z-50 text-center text-gray-500 select-none">
+                      Select a table to view its data.
+                    </div>
+                  )}
+
+                {llmData ? (
+                  <div
+                    className="absolute"
+                    style={{
+                      transform: `translate(${positions['llmData']?.x || 0}px, ${positions['llmData']?.y || 0}px)`,
+                    }}
+                    onMouseDown={(e) => handleMouseDown(e, 'llmData')}
+                  >
+                    <LLMDataTable data={llmData.response} prompt={llmData.prompt} />
+                  </div>
+                ) : (
+                  <div className="z-50 text-center text-gray-500 select-none">
+                    Ask a question in the chat to view LLM responses.
                   </div>
                 )}
               </div>
-            </div>
+
           </div>
-        </SidebarProvider>
+          </SidebarProvider>
+          <SidebarProvider>
+              <ChatSidebar onLlmResponse={handleLlmResponse} />
+              <button
+                onClick={toggleDarkMode}
+                className="fixed top-4 right-4 z-10 p-2 rounded"
+              >
+                {isDarkMode ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
+              </button>
+          </SidebarProvider>
+          </div>
       </ScrollArea>
     </Layout>
   );
