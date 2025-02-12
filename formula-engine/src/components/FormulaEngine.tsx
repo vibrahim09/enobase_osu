@@ -10,37 +10,61 @@ const FormulaEngine = () => {
   const [var1Value, setVar1Value] = useState('');
   const [var2Value, setVar2Value] = useState('');
   const [operator, setOperator] = useState('+');
-  const [result, setResult] = useState(null);
   const [formula, setFormula] = useState('');
+  const [error, setError] = useState('');
 
-  const calculateResult = () => {
-    const num1 = parseFloat(var1Value);
-    const num2 = parseFloat(var2Value);
-    
-    if (isNaN(num1) || isNaN(num2)) {
+  // Map UI operator to backend operator keywords
+  const mapOperator = (op) => {
+    switch (op) {
+      case '+':
+        return 'add';
+      case '-':
+        return 'subtract';
+      case '*':
+        return 'multiply';
+      case '/':
+        return 'divide';
+      default:
+        return '';
+    }
+  };
+
+  const calculateResult = async () => {
+    // Reset error and formula
+    setError('');
+    setFormula('');
+
+    // Build request body
+    const requestBody = {
+      operand1: parseFloat(var1Value),
+      operand2: parseFloat(var2Value),
+      operator: mapOperator(operator)
+    };
+
+    // Basic input validation for numbers
+    if (isNaN(requestBody.operand1) || isNaN(requestBody.operand2)) {
+      setError('Both operands must be valid numbers.');
       return;
     }
 
-    let calculatedResult;
-    switch (operator) {
-      case '+':
-        calculatedResult = num1 + num2;
-        break;
-      case '-':
-        calculatedResult = num1 - num2;
-        break;
-      case '*':
-        calculatedResult = num1 * num2;
-        break;
-      case '/':
-        calculatedResult = num2 !== 0 ? num1 / num2 : 'Cannot divide by zero';
-        break;
-      default:
-        return;
-    }
+    try {
+      // Adjust the URL if your backend runs on a different port or domain.
+      const response = await fetch('http://localhost:3001/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
 
-    setResult(calculatedResult);
-    setFormula(`${var1Name} ${operator} ${var2Name} = ${calculatedResult}`);
+      const data = await response.json();
+
+      if (!data.success) {
+        setError(data.error || 'Calculation failed.');
+      } else {
+        setFormula(`${var1Name} ${operator} ${var2Name} = ${data.result}`);
+      }
+    } catch (err) {
+      setError('An error occurred while calculating.');
+    }
   };
 
   return (
@@ -73,7 +97,7 @@ const FormulaEngine = () => {
             <SelectTrigger className="w-24">
               <SelectValue placeholder="Operator" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               <SelectItem value="+">+</SelectItem>
               <SelectItem value="-">-</SelectItem>
               <SelectItem value="*">×</SelectItem>
@@ -103,11 +127,13 @@ const FormulaEngine = () => {
 
         <Button 
           onClick={calculateResult}
-          className="w-full"
+          className="w-full text-white bg-black"
           disabled={!var1Name || !var2Name || !var1Value || !var2Value}
         >
           Calculate
         </Button>
+
+        {error && <p className="text-red-500">{error}</p>}
 
         {formula && (
           <div className="mt-4 p-4 bg-gray-100 rounded-md">
