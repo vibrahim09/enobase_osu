@@ -8,8 +8,13 @@
    ```bash
    pip install -r requirements.txt
    ```
-
-3. Start the Flask server:
+   
+3. Install Node.js dependencies:
+   ```bash
+   npm install
+   ```
+   
+4. Start the Flask server:
    ```bash
    python3 ai_cli_schema_integration_2.py
    ```
