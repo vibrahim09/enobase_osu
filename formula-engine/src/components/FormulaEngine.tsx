@@ -1,149 +1,239 @@
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+'use client'
 
-const FormulaEngine = () => {
-  const [var1Name, setVar1Name] = useState('');
-  const [var2Name, setVar2Name] = useState('');
-  const [var1Value, setVar1Value] = useState('');
-  const [var2Value, setVar2Value] = useState('');
-  const [operator, setOperator] = useState('+');
-  const [formula, setFormula] = useState('');
-  const [error, setError] = useState('');
+import { useRef, useState, useEffect } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { DivideIcon, MinusIcon, PlusIcon, X as XIcon } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useDrag } from '@/hooks/useDrag'
+import { CanvasItem, Position } from '@/types'
+import { cn } from '@/lib/utils'
+import { calculateFormula } from '@/lib/api'
+import { FunctionSquare } from 'lucide-react'
 
-  // Map UI operator to backend operator keywords
-  const mapOperator = (op) => {
-    switch (op) {
-      case '+':
-        return 'add';
-      case '-':
-        return 'subtract';
-      case '*':
-        return 'multiply';
-      case '/':
-        return 'divide';
-      default:
-        return '';
+interface FormulaEngineProps {
+  item: CanvasItem
+  variables: CanvasItem[]
+  onPositionChange: (position: Position) => void
+  onUpdate: (updates: Partial<CanvasItem>) => void
+  onDelete: () => void
+  onEditingEnd: () => void
+}
+
+const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, onEditingEnd }: FormulaEngineProps) => {
+  const [isEditing, setIsEditing] = useState(false)
+  const [operand1, setOperand1] = useState<string>('')
+  const [operand2, setOperand2] = useState<string>('')
+  const [operator, setOperator] = useState<string>('')
+  const [result, setResult] = useState<number | null>(null)
+  const [isCalculating, setIsCalculating] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const calculationTimeoutRef = useRef<NodeJS.Timeout>()
+
+  const { position, startDrag } = useDrag({
+    initialPosition: item.position,
+    onDragEnd: onPositionChange,
+    disabled: isEditing,
+  })
+
+  // Reset operands if variables are deleted
+  useEffect(() => {
+    const validVariables = variables.map(v => v.id)
+    if (operand1 && !validVariables.includes(operand1)) {
+      setOperand1('')
     }
-  };
-
-  const calculateResult = async () => {
-    // Reset error and formula
-    setError('');
-    setFormula('');
-
-    // Build request body
-    const requestBody = {
-      operand1: parseFloat(var1Value),
-      operand2: parseFloat(var2Value),
-      operator: mapOperator(operator)
-    };
-
-    // Basic input validation for numbers
-    if (isNaN(requestBody.operand1) || isNaN(requestBody.operand2)) {
-      setError('Both operands must be valid numbers.');
-      return;
+    if (operand2 && !validVariables.includes(operand2)) {
+      setOperand2('')
     }
+  }, [variables, operand1, operand2])
 
-    try {
-      // Adjust the URL if your backend runs on a different port or domain.
-      const response = await fetch('http://localhost:3001/calculate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        setError(data.error || 'Calculation failed.');
-      } else {
-        setFormula(`${var1Name} ${operator} ${var2Name} = ${data.result}`);
+  // Calculate result using backend API with debouncing
+  useEffect(() => {
+    const performCalculation = async () => {
+      if (!operand1 || !operand2 || !operator) {
+        setResult(null)
+        return
       }
-    } catch (err) {
-      setError('An error occurred while calculating.');
+
+      const var1 = variables.find(v => v.id === operand1)?.value ?? 0
+      const var2 = variables.find(v => v.id === operand2)?.value ?? 0
+
+      // Clear any existing timeout
+      if (calculationTimeoutRef.current) {
+        clearTimeout(calculationTimeoutRef.current)
+      }
+
+      // Only show loading state if calculation takes longer than 500ms
+      const loadingTimeout = setTimeout(() => {
+        setIsCalculating(true)
+      }, 500)
+
+      try {
+        const calculatedResult = await calculateFormula(var1, var2, operator)
+        setResult(calculatedResult)
+      } finally {
+        clearTimeout(loadingTimeout)
+        setIsCalculating(false)
+      }
     }
-  };
+
+    // Debounce the calculation
+    calculationTimeoutRef.current = setTimeout(performCalculation, 100)
+
+    // Cleanup
+    return () => {
+      if (calculationTimeoutRef.current) {
+        clearTimeout(calculationTimeoutRef.current)
+      }
+    }
+  }, [operand1, operand2, operator, variables])
+
+  // Update linked variable when result changes
+  useEffect(() => {
+    if (result === null) return
+
+    const linkedVarId = `linked-${item.id}`
+    const existingVar = variables.find(v => v.id === linkedVarId)
+    
+    const linkedVariable: CanvasItem = {
+      id: linkedVarId,
+      type: 'variable',
+      position: { x: position.x, y: position.y + 200 },
+      name: `${item.name} (Result)`,
+      value: result
+    }
+
+    if (!existingVar || existingVar.value !== result) {
+      onUpdate({ linkedVariable })
+    }
+  }, [result, item.id, item.name, position.x, position.y, variables, onUpdate])
+
+  // Filter out this formula's linked variable from the available variables
+  const availableVariables = variables.filter(variable => variable.id !== `linked-${item.id}`)
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsEditing(true)
+  }
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value
+    
+    // Update formula name
+    onUpdate({ name: newName })
+
+    // Update linked variable name if it exists
+    const linkedVarId = `linked-${item.id}`
+    const existingVar = variables.find(v => v.id === linkedVarId)
+    
+    if (existingVar) {
+      onUpdate({ 
+        linkedVariable: {
+          ...existingVar,
+          name: `${newName} (Result)`
+        }
+      })
+    }
+  }
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isEditing) {
+      startDrag(e)
+    }
+  }
+
+  const handleBlur = () => {
+    setIsEditing(false)
+    onEditingEnd()
+  }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Formula Engine</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">First Variable</label>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Name"
-              value={var1Name}
-              onChange={(e) => setVar1Name(e.target.value)}
-              className="w-1/2"
-            />
-            <Input
-              type="number"
-              placeholder="Value"
-              value={var1Value}
-              onChange={(e) => setVar1Value(e.target.value)}
-              className="w-1/2"
-            />
-          </div>
-        </div>
+    <Card
+      ref={cardRef}
+      className={cn(
+        "absolute w-80",
+        !isEditing && "cursor-move",
+        "select-none",
+      )}
+      style={{ left: position.x, top: position.y }}
+      onMouseDown={handleMouseDown}
+      onDoubleClick={handleDoubleClick}
+    >
+      {!isEditing && (
+        <XIcon 
+          className="absolute right-2 top-2 h-6 w-6 rounded-full hover:cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 p-1"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+        />
+      )}
+      <CardContent className="p-4 space-y-4">
+        {isEditing ? (
+          <Input
+            value={item.name}
+            onChange={handleNameChange}
+            onBlur={handleBlur}
+            onClick={(e) => e.stopPropagation()}
+            placeholder="Formula name"
+            className="cursor-text select-text"
+            autoFocus/>
+        ) : (
+          <h3 className="font-medium flex items-center"><FunctionSquare className='mr-1 size-5'/>{item.name}</h3>
+        )}
 
-        <div className="w-full flex justify-center">
+        <div className="grid grid-cols-3 gap-2">
+          <Select value={operand1} onValueChange={setOperand1}>
+            <SelectTrigger>
+              <SelectValue placeholder="Variable"/>
+            </SelectTrigger>
+            <SelectContent>
+              {availableVariables.map(variable => (
+                <SelectItem key={variable.id} value={variable.id}>
+                  {variable.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={operator} onValueChange={setOperator}>
-            <SelectTrigger className="w-24">
+            <SelectTrigger>
               <SelectValue placeholder="Operator" />
             </SelectTrigger>
-            <SelectContent className="bg-white">
-              <SelectItem value="+">+</SelectItem>
-              <SelectItem value="-">-</SelectItem>
-              <SelectItem value="*">×</SelectItem>
-              <SelectItem value="/">/</SelectItem>
+            <SelectContent>
+              <SelectItem value="add"><PlusIcon className='size-4'/></SelectItem>
+              <SelectItem value="subtract"><MinusIcon className='size-4'/></SelectItem>
+              <SelectItem value="multiply"><XIcon className='size-4'/></SelectItem>
+              <SelectItem value="divide"><DivideIcon className='size-4'/></SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={operand2} onValueChange={setOperand2}>
+            <SelectTrigger>
+              <SelectValue placeholder="Variable" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableVariables.map(variable => (
+                <SelectItem key={variable.id} value={variable.id}>
+                  {variable.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Second Variable</label>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Name"
-              value={var2Name}
-              onChange={(e) => setVar2Name(e.target.value)}
-              className="w-1/2"
-            />
-            <Input
-              type="number"
-              placeholder="Value"
-              value={var2Value}
-              onChange={(e) => setVar2Value(e.target.value)}
-              className="w-1/2"
-            />
-          </div>
+        <div className="text-sm text-muted-foreground">
+          Result: {isCalculating 
+            ? 'Calculating...' 
+            : result !== null 
+              ? result.toFixed(2) 
+              : 'Select values to calculate'}
         </div>
-
-        <Button 
-          onClick={calculateResult}
-          className="w-full text-white bg-black"
-          disabled={!var1Name || !var2Name || !var1Value || !var2Value}
-        >
-          Calculate
-        </Button>
-
-        {error && <p className="text-red-500">{error}</p>}
-
-        {formula && (
-          <div className="mt-4 p-4 bg-gray-100 rounded-md">
-            <p className="text-lg font-medium">Formula:</p>
-            <p className="text-xl">{formula}</p>
-          </div>
-        )}
       </CardContent>
     </Card>
-  );
-};
+  )
+}
 
-export default FormulaEngine;
+export { FormulaEngine }
+export default FormulaEngine

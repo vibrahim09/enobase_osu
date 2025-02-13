@@ -1,10 +1,10 @@
 "use client"
-import FormulaEngine from '@/components/FormulaEngine'
+import { Canvas } from '@/components/Canvas'
 
 export default function Home() {
   return (
     <main className="min-h-screen p-8">
-      <FormulaEngine />
+      <Canvas />
     </main>
   )
 }
