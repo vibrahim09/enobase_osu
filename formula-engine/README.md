@@ -1,6 +1,11 @@
 ## Getting Started
 
-First, run the next.js development server:
+Install dependecies:
+```
+npm install
+```
+
+Run the next.js development server:
 
 ```bash
 npm run dev
