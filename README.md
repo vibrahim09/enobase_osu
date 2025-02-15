@@ -1,46 +1,25 @@
-### 1. Backend Setup
-1. Navigate to backend directory:
-   ```bash
-   cd backend
-   ```
+## Getting Started
 
-2. Install Python dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   
-3. Install Node.js dependencies:
-   ```bash
-   npm install
-   ```
-   
-4. Start the Flask server:
-   ```bash
-   python3 ai_cli_schema_integration_2.py
-   ```
-   The backend will be available at `http://127.0.0.1:5000`
+Install dependecies:
+```
+npm install
+```
 
-### 2. Frontend Setup
-1. Navigate to frontend directory:
-   ```bash
-   cd frontend
-   ```
+Run the next.js development server:
 
-2. Install Node.js dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-   The frontend will be available at `http://localhost:3000`
+Then run the formula engine's backend (express.js) server:
 
-### 3. Running the Application
-1. Ensure all three services are running:
-   - PostgreSQL Docker container
-   - Python Flask backend
-   - Next.js frontend
+```bash
+node operations.js
+```
 
-2. Access the web interface at `http://localhost:3000`
