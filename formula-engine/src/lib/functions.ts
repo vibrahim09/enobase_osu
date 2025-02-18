@@ -1,19 +1,19 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 // Request body interfaces
-interface AddRequestBody {
+export interface AddRequestBody {
   function: 'add';
   num1: number;
   num2: number;
 }
 
-interface SubtractRequestBody {
+export interface SubtractRequestBody {
   function: 'subtract';
   num1: number;
   num2: number;
 }
 
-interface FunctionRequestBody {
+export interface FunctionRequestBody {
   function: string;
   [key: string]: any;
 }
@@ -45,7 +45,8 @@ const functionMap: Record<string, FunctionHandler<any>> = {
   subtract,
 };
 
-const dispatch = (reqBody: FunctionRequestBody) => {
+// Export the dispatch function
+export const dispatch = (reqBody: FunctionRequestBody) => {
   const handler = functionMap[reqBody.function];
   if (!handler) {
     return undefined;
