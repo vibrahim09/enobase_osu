@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useDrag } from '@/hooks/useDrag'
 import { CanvasItem, Position } from '@/types'
 import { cn } from '@/lib/utils'
-import { calculateFormula } from '@/lib/api'
 import { FunctionSquare } from 'lucide-react'
 
 interface FormulaEngineProps {
@@ -59,29 +58,52 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
       const var1 = variables.find(v => v.id === operand1)?.value ?? 0
       const var2 = variables.find(v => v.id === operand2)?.value ?? 0
 
-      // Clear any existing timeout
       if (calculationTimeoutRef.current) {
         clearTimeout(calculationTimeoutRef.current)
       }
 
-      // Only show loading state if calculation takes longer than 500ms
       const loadingTimeout = setTimeout(() => {
         setIsCalculating(true)
       }, 500)
 
       try {
-        const calculatedResult = await calculateFormula(var1, var2, operator)
-        setResult(calculatedResult)
+        // Only allow add and subtract operations for now
+        if (operator !== 'add' && operator !== 'subtract') {
+          setResult(null)
+          return
+        }
+
+        const requestBody = {
+          function: operator,
+          num1: var1,
+          num2: var2
+        }
+
+        const response = await fetch('/api', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        })
+
+        if (!response.ok) {
+          throw new Error('Calculation failed')
+        }
+
+        const data = await response.json()
+        setResult(data.result)
+      } catch (error) {
+        console.error('Calculation error:', error)
+        setResult(null)
       } finally {
         clearTimeout(loadingTimeout)
         setIsCalculating(false)
       }
     }
 
-    // Debounce the calculation
     calculationTimeoutRef.current = setTimeout(performCalculation, 100)
 
-    // Cleanup
     return () => {
       if (calculationTimeoutRef.current) {
         clearTimeout(calculationTimeoutRef.current)
@@ -204,8 +226,10 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
             <SelectContent>
               <SelectItem value="add"><PlusIcon className='size-4'/></SelectItem>
               <SelectItem value="subtract"><MinusIcon className='size-4'/></SelectItem>
+              {/* temporarily disabled until API implementation
               <SelectItem value="multiply"><XIcon className='size-4'/></SelectItem>
               <SelectItem value="divide"><DivideIcon className='size-4'/></SelectItem>
+              */}
             </SelectContent>
           </Select>
 
