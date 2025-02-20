@@ -68,7 +68,7 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
 
       try {
         // Only allow add and subtract operations for now
-        if (operator !== 'add' && operator !== 'subtract') {
+      if (operator !== 'add' && operator !== 'subtract' && operator !== 'divide' && operator !== 'multiply') {
           setResult(null)
           return
         }
@@ -226,6 +226,10 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
             <SelectContent>
               <SelectItem value="add"><PlusIcon className='size-4'/></SelectItem>
               <SelectItem value="subtract"><MinusIcon className='size-4'/></SelectItem>
+              <SelectItem value="divide"><DivideIcon className='size-4'/></SelectItem>
+              <SelectItem value="multiply"><XIcon className='size-4'/></SelectItem>
+
+
               {/* temporarily disabled until API implementation
               <SelectItem value="multiply"><XIcon className='size-4'/></SelectItem>
               <SelectItem value="divide"><DivideIcon className='size-4'/></SelectItem>
