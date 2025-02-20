@@ -13,6 +13,20 @@ export interface SubtractRequestBody {
   num2: number;
 }
 
+export interface DivideRequestBody {
+  function: 'divide';
+  num1: number;
+  num2: number;
+}
+
+
+export interface MultiplyRequestBody {
+  function: 'multiply';
+  num1: number;
+  num2: number;
+}
+
+
 export interface FunctionRequestBody {
   function: string;
   [key: string]: any;
@@ -29,6 +43,15 @@ function isAddRequestBody(reqBody: FunctionRequestBody): reqBody is AddRequestBo
 function isSubtractRequestBody(reqBody: FunctionRequestBody): reqBody is SubtractRequestBody {
   return reqBody.function === 'subtract' && typeof reqBody.num1 === 'number' && typeof reqBody.num2 === 'number';
 }
+function isDivideRequestBody(reqBody: FunctionRequestBody): reqBody is DivideRequestBody {
+  return reqBody.function === 'divide' && typeof reqBody.num1 === 'number' && typeof reqBody.num2 === 'number';
+}
+
+
+function isMultiplyRequestBody(reqBody: FunctionRequestBody): reqBody is MultiplyRequestBody {
+  return reqBody.function === 'multiply' && typeof reqBody.num1 === 'number' && typeof reqBody.num2 === 'number';
+}
+
 
 // Function implementations
 const add: FunctionHandler<AddRequestBody> = (reqBody) => {
@@ -38,12 +61,24 @@ const add: FunctionHandler<AddRequestBody> = (reqBody) => {
 const subtract: FunctionHandler<SubtractRequestBody> = (reqBody) => {
   return reqBody.num1 - reqBody.num2;
 }
-
+const divide: FunctionHandler<DivideRequestBody> = (reqBody) => {
+  return reqBody.num1 / reqBody.num2;
+}
+const multiply: FunctionHandler<MultiplyRequestBody> = (reqBody) => {
+  return reqBody.num1 * reqBody.num2;
+}
 // Function map
 const functionMap: Record<string, FunctionHandler<any>> = {
   add,
   subtract,
+  divide,
+  multiply,
+
 };
+
+
+
+
 
 // Export the dispatch function
 export const dispatch = (reqBody: FunctionRequestBody) => {
@@ -58,6 +93,13 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
   } else if (isSubtractRequestBody(reqBody)) {
     return handler(reqBody);
   }
+  else if (isDivideRequestBody(reqBody)) {
+    return handler(reqBody);
+  }
+  else if (isMultiplyRequestBody(reqBody)) {
+    return handler(reqBody);
+  }
+
   return undefined;
 };
 
