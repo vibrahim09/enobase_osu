@@ -62,6 +62,9 @@ const subtract: FunctionHandler<SubtractRequestBody> = (reqBody) => {
   return reqBody.num1 - reqBody.num2;
 }
 const divide: FunctionHandler<DivideRequestBody> = (reqBody) => {
+  if (reqBody.num2 === 0) {
+    throw new Error('Division by zero is not allowed');
+  }
   return reqBody.num1 / reqBody.num2;
 }
 const multiply: FunctionHandler<MultiplyRequestBody> = (reqBody) => {
@@ -84,27 +87,31 @@ const functionMap: Record<string, FunctionHandler<any>> = {
 export const dispatch = (reqBody: FunctionRequestBody) => {
   const handler = functionMap[reqBody.function];
   if (!handler) {
-    return undefined;
+    return { error: 'Function not found' };
   }
 
-  // Validate input structure with type guards
-  if (isAddRequestBody(reqBody)) {
-    return handler(reqBody);
-  } else if (isSubtractRequestBody(reqBody)) {
-    return handler(reqBody);
-  }
-  else if (isDivideRequestBody(reqBody)) {
-    return handler(reqBody);
-  }
-  else if (isMultiplyRequestBody(reqBody)) {
-    return handler(reqBody);
-  }
+  try {
+    // Validate input structure with type guards
+    if (isAddRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isSubtractRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isDivideRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isMultiplyRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    }
 
-  return undefined;
+    return { error: 'Invalid request body' };
+  } catch (error) {
+    return { 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    };
+  }
 };
 
 export default (req: NextApiRequest, res: NextApiResponse) => {
   const reqBody: FunctionRequestBody = req.body;
   const result = dispatch(reqBody);
-  res.status(200).json({ result });
+  res.status(200).json(result);
 };
