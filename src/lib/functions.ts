@@ -32,6 +32,16 @@ export interface FunctionRequestBody {
   [key: string]: any;
 }
 
+export interface MedianRequestBody {
+  function: 'median';
+  numbers: number[];
+}
+
+export interface MeanRequestBody {
+  function: 'mean';
+  numbers: number[];
+}
+
 // Type of the handler functions
 type FunctionHandler<T> = (reqBody: T) => any;
 
@@ -52,6 +62,13 @@ function isMultiplyRequestBody(reqBody: FunctionRequestBody): reqBody is Multipl
   return reqBody.function === 'multiply' && typeof reqBody.num1 === 'number' && typeof reqBody.num2 === 'number';
 }
 
+function isMedianRequestBody(reqBody: FunctionRequestBody): reqBody is MedianRequestBody {
+  return reqBody.function === 'median' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number');
+}
+
+function isMeanRequestBody(reqBody: FunctionRequestBody): reqBody is MeanRequestBody {
+  return reqBody.function === 'mean' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number');
+}
 
 // Function implementations
 const add: FunctionHandler<AddRequestBody> = (reqBody) => {
@@ -67,12 +84,26 @@ const divide: FunctionHandler<DivideRequestBody> = (reqBody) => {
 const multiply: FunctionHandler<MultiplyRequestBody> = (reqBody) => {
   return reqBody.num1 * reqBody.num2;
 }
+
+const median: FunctionHandler<MedianRequestBody> = (reqBody) => {
+  const sortedNumbers = reqBody.numbers.slice().sort((a, b) => a - b);
+  const mid = Math.floor(sortedNumbers.length / 2);
+  return sortedNumbers.length % 2 !== 0 ? sortedNumbers[mid] : (sortedNumbers[mid - 1] + sortedNumbers[mid]) / 2;
+}
+
+const mean: FunctionHandler<MeanRequestBody> = (reqBody) => {
+  const sum = reqBody.numbers.reduce((acc, num) => acc + num, 0);
+  return sum / reqBody.numbers.length;
+}
+
 // Function map
 const functionMap: Record<string, FunctionHandler<any>> = {
   add,
   subtract,
   divide,
   multiply,
+  median,
+  mean
 
 };
 
@@ -98,6 +129,12 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
   }
   else if (isMultiplyRequestBody(reqBody)) {
     return handler(reqBody);
+  }
+  else if (isMedianRequestBody(reqBody)) {
+    return handler(reqBody)
+  }
+  else if (isMeanRequestBody(reqBody)) {
+    return handler(reqBody)
   }
 
   return undefined;
