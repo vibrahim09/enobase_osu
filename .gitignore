@@ -42,3 +42,5 @@ yarn-error.log*
 next-env.d.ts
 src/lib/functions.tests.ts
 enobase_osu/jest.config.js
+bfg.jar
+formula-engine/bfg.jar
