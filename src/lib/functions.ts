@@ -42,6 +42,16 @@ export interface MeanRequestBody {
   numbers: number[];
 }
 
+export interface MinRequestBody {
+  function: 'min',
+  numbers: number[]
+}
+
+export interface MaxRequestBody {
+  function: 'max',
+  numbers: number[]
+}
+
 // Type of the handler functions
 type FunctionHandler<T> = (reqBody: T) => any;
 
@@ -70,6 +80,14 @@ function isMeanRequestBody(reqBody: FunctionRequestBody): reqBody is MeanRequest
   return reqBody.function === 'mean' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number');
 }
 
+function isMinRequestBody(reqBody: FunctionRequestBody): reqBody is MinRequestBody {
+  return reqBody.function === 'min' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number')
+}
+
+function isMaxRequestBody(reqBody: FunctionRequestBody): reqBody is MaxRequestBody {
+  return reqBody.function === 'max' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number');
+}
+
 // Function implementations
 const add: FunctionHandler<AddRequestBody> = (reqBody) => {
   return reqBody.num1 + reqBody.num2;
@@ -96,6 +114,14 @@ const mean: FunctionHandler<MeanRequestBody> = (reqBody) => {
   return sum / reqBody.numbers.length;
 }
 
+const min: FunctionHandler<MinRequestBody> = (reqBody) => {
+  return reqBody.numbers.length === 0 ? undefined : Math.min(...reqBody.numbers)
+}
+
+const max: FunctionHandler<MaxRequestBody> = (reqBody) => {
+  return reqBody.numbers.length === 0 ? undefined : Math.max(...reqBody.numbers)
+}
+
 // Function map
 const functionMap: Record<string, FunctionHandler<any>> = {
   add,
@@ -103,8 +129,9 @@ const functionMap: Record<string, FunctionHandler<any>> = {
   divide,
   multiply,
   median,
-  mean
-
+  mean,
+  min,
+  max
 };
 
 
