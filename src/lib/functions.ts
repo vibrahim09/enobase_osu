@@ -52,6 +52,12 @@ export interface MaxRequestBody {
   numbers: number[]
 }
 
+export interface RoundRequestBody {
+  function: 'round',
+  number: number,
+  precision?: number,
+}
+
 // Type of the handler functions
 type FunctionHandler<T> = (reqBody: T) => any;
 
@@ -88,6 +94,10 @@ function isMaxRequestBody(reqBody: FunctionRequestBody): reqBody is MaxRequestBo
   return reqBody.function === 'max' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number');
 }
 
+function isRoundRequestBody(reqBody: FunctionRequestBody): reqBody is RoundRequestBody {
+  return reqBody.function === 'round' && typeof reqBody.number === 'number' && (reqBody.precision === undefined || typeof reqBody.precision === 'number')
+}
+
 // Function implementations
 const add: FunctionHandler<AddRequestBody> = (reqBody) => {
   return reqBody.num1 + reqBody.num2;
@@ -122,6 +132,12 @@ const max: FunctionHandler<MaxRequestBody> = (reqBody) => {
   return reqBody.numbers.length === 0 ? undefined : Math.max(...reqBody.numbers)
 }
 
+const round: FunctionHandler<RoundRequestBody> = (reqBody) => {
+  const precision = reqBody.precision ?? 0
+  const factor = Math.pow(10, precision)
+  return Math.round(reqBody.number * factor) / factor
+}
+
 // Function map
 const functionMap: Record<string, FunctionHandler<any>> = {
   add,
@@ -131,7 +147,8 @@ const functionMap: Record<string, FunctionHandler<any>> = {
   median,
   mean,
   min,
-  max
+  max,
+  round
 };
 
 
@@ -163,6 +180,16 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
   else if (isMeanRequestBody(reqBody)) {
     return handler(reqBody)
   }
+  else if (isMinRequestBody(reqBody)) {
+    return handler(reqBody)
+  }
+  else if (isMaxRequestBody(reqBody)) {
+    return handler(reqBody)
+  }
+  else if (isRoundRequestBody(reqBody)) {
+    return handler(reqBody)
+  }
+
 
   return undefined;
 };
