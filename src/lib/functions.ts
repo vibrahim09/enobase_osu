@@ -58,6 +58,22 @@ export interface RoundRequestBody {
   precision?: number,
 }
 
+export interface FloorRequestBody {
+  function: 'floor';
+  number: number;
+}
+
+export interface CeilRequestBody {
+  function: 'ceil';
+  number: number;
+}
+
+export interface PowRequestBody {
+  function: 'pow';
+  base: number;
+  exponent?: number;
+}
+
 // Type of the handler functions
 type FunctionHandler<T> = (reqBody: T) => any;
 
@@ -97,6 +113,19 @@ function isMaxRequestBody(reqBody: FunctionRequestBody): reqBody is MaxRequestBo
 function isRoundRequestBody(reqBody: FunctionRequestBody): reqBody is RoundRequestBody {
   return reqBody.function === 'round' && typeof reqBody.number === 'number' && (reqBody.precision === undefined || typeof reqBody.precision === 'number')
 }
+
+function isFloorRequestBody(reqBody: FunctionRequestBody): reqBody is FloorRequestBody {
+  return reqBody.function === 'floor' && typeof reqBody.number === 'number';
+}
+
+function isCeilRequestBody(reqBody: FunctionRequestBody): reqBody is CeilRequestBody {
+  return reqBody.function === 'ceil' && typeof reqBody.number === 'number';
+}
+
+function isPowRequestBody(reqBody: FunctionRequestBody): reqBody is PowRequestBody {
+  return reqBody.function === 'pow' && typeof reqBody.base === 'number' && (reqBody.exponent === undefined || typeof reqBody.exponent === 'number');
+}
+
 
 // Function implementations
 const add: FunctionHandler<AddRequestBody> = (reqBody) => {
@@ -138,6 +167,20 @@ const round: FunctionHandler<RoundRequestBody> = (reqBody) => {
   return Math.round(reqBody.number * factor) / factor
 }
 
+const floor: FunctionHandler<FloorRequestBody> = (reqBody) => {
+  return Math.floor(reqBody.number);
+}
+
+const ceil: FunctionHandler<CeilRequestBody> = (reqBody) => {
+  return Math.ceil(reqBody.number);
+}
+
+const pow: FunctionHandler<PowRequestBody> = (reqBody) => {
+  const exponent = reqBody.exponent ?? 2;
+  return Math.pow(reqBody.base, exponent);
+}
+
+
 // Function map
 const functionMap: Record<string, FunctionHandler<any>> = {
   add,
@@ -148,7 +191,10 @@ const functionMap: Record<string, FunctionHandler<any>> = {
   mean,
   min,
   max,
-  round
+  round,
+  floor,
+  ceil,
+  pow
 };
 
 
@@ -189,6 +235,17 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
   else if (isRoundRequestBody(reqBody)) {
     return handler(reqBody)
   }
+  else if (isFloorRequestBody(reqBody)) {
+    return handler(reqBody)
+  }
+  else if (isCeilRequestBody(reqBody)) {
+    return handler(reqBody)
+  }
+  else if (isPowRequestBody(reqBody)) {
+    return handler(reqBody)
+  }
+
+
 
 
   return undefined;
