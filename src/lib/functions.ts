@@ -70,6 +70,48 @@ export interface FunctionRequestBody {
   [key: string]: any;
 }
 
+export interface MedianRequestBody {
+  function: 'median';
+  numbers: number[];
+}
+
+export interface MeanRequestBody {
+  function: 'mean';
+  numbers: number[];
+}
+
+export interface MinRequestBody {
+  function: 'min',
+  numbers: number[]
+}
+
+export interface MaxRequestBody {
+  function: 'max',
+  numbers: number[]
+}
+
+export interface RoundRequestBody {
+  function: 'round',
+  number: number,
+  precision?: number,
+}
+
+export interface FloorRequestBody {
+  function: 'floor';
+  number: number;
+}
+
+export interface CeilRequestBody {
+  function: 'ceil';
+  number: number;
+}
+
+export interface PowRequestBody {
+  function: 'pow';
+  base: number;
+  exponent?: number;
+}
+
 // Type of the handler functions
 type FunctionHandler<T> = (reqBody: T) => any;
 
@@ -88,6 +130,38 @@ function isDivideRequestBody(reqBody: FunctionRequestBody): reqBody is DivideReq
 
 function isMultiplyRequestBody(reqBody: FunctionRequestBody): reqBody is MultiplyRequestBody {
   return reqBody.function === 'multiply' && typeof reqBody.num1 === 'number' && typeof reqBody.num2 === 'number';
+}
+
+function isMedianRequestBody(reqBody: FunctionRequestBody): reqBody is MedianRequestBody {
+  return reqBody.function === 'median' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number');
+}
+
+function isMeanRequestBody(reqBody: FunctionRequestBody): reqBody is MeanRequestBody {
+  return reqBody.function === 'mean' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number');
+}
+
+function isMinRequestBody(reqBody: FunctionRequestBody): reqBody is MinRequestBody {
+  return reqBody.function === 'min' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number')
+}
+
+function isMaxRequestBody(reqBody: FunctionRequestBody): reqBody is MaxRequestBody {
+  return reqBody.function === 'max' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number');
+}
+
+function isRoundRequestBody(reqBody: FunctionRequestBody): reqBody is RoundRequestBody {
+  return reqBody.function === 'round' && typeof reqBody.number === 'number' && (reqBody.precision === undefined || typeof reqBody.precision === 'number')
+}
+
+function isFloorRequestBody(reqBody: FunctionRequestBody): reqBody is FloorRequestBody {
+  return reqBody.function === 'floor' && typeof reqBody.number === 'number';
+}
+
+function isCeilRequestBody(reqBody: FunctionRequestBody): reqBody is CeilRequestBody {
+  return reqBody.function === 'ceil' && typeof reqBody.number === 'number';
+}
+
+function isPowRequestBody(reqBody: FunctionRequestBody): reqBody is PowRequestBody {
+  return reqBody.function === 'pow' && typeof reqBody.base === 'number' && (reqBody.exponent === undefined || typeof reqBody.exponent === 'number');
 }
 
 
@@ -148,36 +222,6 @@ const at: FunctionHandler<AtRequestBody<any>> = (reqBody) => {
   //return the array body items
   return reqBody.items[reqBody.index];
 }
-const first: FunctionHandler<FirstRequestBody<any>> = (reqBody) => {
-  //return the array body items
-  return reqBody.items[0];
-}
-const last: FunctionHandler<LastRequestBody<any>> = (reqBody) => {
-  //return the array body items
-  return reqBody.items[reqBody.items.length - 1];
-}
-const sort: FunctionHandler<SortRequestBody<any>> = (reqBody) => {
-  //return the array body items
-  return reqBody.items.sort((a,b) =>{
-    if (a > b) return -1;
-    if (a < b) return 1;
-    return 0;
-
-
-  });
-}
-const reverse: FunctionHandler<ReverseRequestBody<any>> = (reqBody) => {
-  //return the array body items
-  return reqBody.items.reverse();
-}
-const some: FunctionHandler<SomeRequestBody<any>> = (reqBody) => {
-  //return the array body items
-  return reqBody.items.some(reqBody.predicate);
-}
-const concat: FunctionHandler<ConcatRequestBody<any>> = (reqBody) => {
-  //return the array into one big item
-  return reqBody.lists.flat();
-}
 
 
 
@@ -187,14 +231,7 @@ const functionMap: Record<string, FunctionHandler<any>> = {
   subtract,
   divide,
   multiply,
-  list,
-  at,
-  first,
-  last,
-  sort,
-  reverse,
-  some,
-  concat,
+
 };
 
 
@@ -242,6 +279,7 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
       error: error instanceof Error ? error.message : 'Unknown error occurred' 
     };
   }
+
 };
 
 export default (req: NextApiRequest, res: NextApiResponse) => {
