@@ -5,20 +5,22 @@ import { FunctionRequestBody } from '@/lib/functions'
 export async function POST(request: Request) {
   try {
     const body = await request.json() as FunctionRequestBody
-    console.log('Received request body:', body)
-
-    const result = dispatch(body)
-    console.log('Calculation result:', result)
+    console.log('API received:', body)
     
-    if (result === undefined) {
-      console.log('Invalid request - result undefined')
+    const response = dispatch(body)
+    console.log('API response:', response)
+
+    // If it's an error, return it directly
+    if ('error' in response) {
       return NextResponse.json(
-        { message: 'Invalid request' },
+        { message: response.error },
         { status: 400 }
       )
     }
 
-    return NextResponse.json({ result })
+    return NextResponse.json({
+      result: response.result
+    })
   } catch (error) {
     console.error('API error:', error)
     return NextResponse.json(
