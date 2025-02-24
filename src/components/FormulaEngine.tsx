@@ -25,7 +25,7 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
   const [operand1, setOperand1] = useState<string>('')
   const [operand2, setOperand2] = useState<string>('')
   const [operator, setOperator] = useState<string>('')
-  const [result, setResult] = useState<number | null>(null)
+  const [result, setResult] = useState<number | string | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const calculationTimeoutRef = useRef<NodeJS.Timeout>()
@@ -67,17 +67,13 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
       }, 500)
 
       try {
-        // Only allow add and subtract operations for now
-        if (operator !== 'add' && operator !== 'subtract') {
-          setResult(null)
-          return
-        }
-
         const requestBody = {
           function: operator,
           num1: var1,
           num2: var2
         }
+
+        console.log('Sending request:', requestBody)  // Debug log
 
         const response = await fetch('/api', {
           method: 'POST',
@@ -87,15 +83,32 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
           body: JSON.stringify(requestBody),
         })
 
-        if (!response.ok) {
-          throw new Error('Calculation failed')
+        const data = await response.json()
+        console.log('Received response:', data)  // Debug log
+
+        if ('message' in data) {
+          setResult(data.message)
+          return
+        }
+        
+        if ('error' in data) {
+          setResult(data.error)
+          return
         }
 
-        const data = await response.json()
-        setResult(data.result)
+        // Handle nested result structure
+        const resultValue = data.result?.result ?? data.result
+        const numericResult = Number(resultValue)
+        console.log('Numeric result:', numericResult)  // Debug log
+        
+        setResult(
+          Number.isFinite(numericResult) 
+            ? Number(numericResult.toFixed(2)) 
+            : null
+        )
       } catch (error) {
         console.error('Calculation error:', error)
-        setResult(null)
+        setResult('An error occurred')
       } finally {
         clearTimeout(loadingTimeout)
         setIsCalculating(false)
@@ -226,10 +239,8 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
             <SelectContent>
               <SelectItem value="add"><PlusIcon className='size-4'/></SelectItem>
               <SelectItem value="subtract"><MinusIcon className='size-4'/></SelectItem>
-              {/* temporarily disabled until API implementation
               <SelectItem value="multiply"><XIcon className='size-4'/></SelectItem>
               <SelectItem value="divide"><DivideIcon className='size-4'/></SelectItem>
-              */}
             </SelectContent>
           </Select>
 
@@ -250,9 +261,11 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
         <div className="text-sm text-muted-foreground">
           Result: {isCalculating 
             ? 'Calculating...' 
-            : result !== null 
-              ? result.toFixed(2) 
-              : 'Select values to calculate'}
+            : typeof result === 'string'
+              ? result  // Display error message if result is a string
+              : result !== null 
+                ? result.toFixed(2) 
+                : 'Select values to calculate'}
         </div>
       </CardContent>
     </Card>
