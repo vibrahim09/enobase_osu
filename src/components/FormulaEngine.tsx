@@ -27,69 +27,69 @@ const functionMetadata = {
     label: 'Add', 
     args: ['num1', 'num2'], 
     icon: PlusIcon,
-    docs: 'returns the sum of two numbers\n\nexample: add(1, 2) => 3'
+    docs: 'Returns the sum of two numbers\n\nexample: add(1, 2) => 3'
   },
   subtract: { 
     label: 'Subtract', 
     args: ['num1', 'num2'], 
     icon: MinusIcon,
-    docs: 'returns the difference of two numbers\n\nexample: subtract(1, 2) => -1'
+    docs: 'Returns the difference of two numbers\n\nexample: subtract(1, 2) => -1'
   },
   multiply: { 
     label: 'Multiply', 
     args: ['num1', 'num2'], 
     icon: XIcon,
-    docs: 'returns the product of two numbers\n\nexample: multiply(1, 2) => 2'
+    docs: 'Returns the product of two numbers\n\nexample: multiply(1, 2) => 2'
   },
   divide: { 
     label: 'Divide', 
     args: ['num1', 'num2'], 
     icon: DivideIcon,
-    docs: 'returns the quotient of two numbers\n\nexample: divide(1, 2) => 0.5'
+    docs: 'Returns the quotient of two numbers\n\nexample: divide(1, 2) => 0.5'
+  },
+  round: { 
+    label: 'Round', 
+    args: ['number', 'precision?'],
+    docs: 'Returns the number rounded to the precision\n\nexample: round(1.234, 2) => 1.23'
+  },
+  floor: { 
+    label: 'Floor', 
+    args: ['number'],
+    docs: 'Returns the number rounded down to the nearest integer\n\nexample: floor(1.234) => 1'
+  },
+  ceil: { 
+    label: 'Ceiling', 
+    args: ['number'],
+    docs: 'Returns the number rounded up to the nearest integer\n\nexample: ceil(1.234) => 2'
+  },
+  pow: { 
+    label: 'Power', 
+    args: ['base', 'exponent?'],
+    docs: 'Returns the result of a base number raised to the exponent power\n\nexample: pow(2, 3) => 8'
   },
   median: { 
     label: 'Median', 
     args: ['numbers'],
     requiresList: true,
-    docs: 'returns the median of a list variable\n\nexample: median([1, 2, 3]) => 2'
+    docs: 'Returns the median of a list variable\n\nexample: median([1, 2, 3]) => 2'
   },
   mean: { 
     label: 'Mean', 
     args: ['numbers'],
     requiresList: true,
-    docs: 'returns the mean of a list variable\n\nexample: mean([1, 2, 3]) => 2'
+    docs: 'Returns the mean of a list variable\n\nexample: mean([1, 2, 3]) => 2'
   },
   min: { 
     label: 'Minimum', 
     args: ['numbers'],
     requiresList: true,
-    docs: 'returns the minimum value in a list\n\nexample: min([1, 2, 3]) => 1'
+    docs: 'Returns the minimum value in a list\n\nexample: min([1, 2, 3]) => 1'
   },
   max: { 
     label: 'Maximum', 
     args: ['numbers'],
     requiresList: true,
-    docs: 'returns the maximum value in a list\n\nexample: max([1, 2, 3]) => 3'
-  },
-  round: { 
-    label: 'Round', 
-    args: ['number', 'precision?'],
-    docs: 'returns the number rounded to the precision\n\nexample: round(1.234, 2) => 1.23'
-  },
-  floor: { 
-    label: 'Floor', 
-    args: ['number'],
-    docs: 'returns the number rounded down to the nearest integer\n\nexample: floor(1.234) => 1'
-  },
-  ceil: { 
-    label: 'Ceiling', 
-    args: ['number'],
-    docs: 'returns the number rounded up to the nearest integer\n\nexample: ceil(1.234) => 2'
-  },
-  pow: { 
-    label: 'Power', 
-    args: ['base', 'exponent?'],
-    docs: 'returns the result of a base number raised to the exponent power\n\nexample: pow(2, 3) => 8'
+    docs: 'Returns the maximum value in a list\n\nexample: max([1, 2, 3]) => 3'
   },
 } as const
 
@@ -288,6 +288,7 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
               key={baseArg}
               value={inputs[baseArg] || ''} 
               onValueChange={(value) => setInputs(prev => ({ ...prev, [baseArg]: value }))}
+              
             >
               <SelectTrigger>
                 <SelectValue placeholder={`${baseArg}${isOptional ? ' (optional)' : ''}`}/>
@@ -295,6 +296,7 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
               <SelectContent>
                 {eligibleVariables.map(variable => (
                   <SelectItem 
+                    className="font-medium text-muted-foreground pl-2" 
                     key={variable.id} 
                     value={variable.id}
                     disabled={metadata.requiresList && variable.variableType !== 'list'}
@@ -317,6 +319,7 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
         "absolute w-80",
         !isEditing && "cursor-move",
         "select-none",
+        "font-medium"
       )}
       style={{ left: position.x, top: position.y }}
       onMouseDown={handleMouseDown}
@@ -356,10 +359,26 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
             <SelectValue placeholder="Select Function"/>
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(functionMetadata).map(([key, { label }]) => (
-              <SelectItem key={key} value={key}>
-                {label}
-              </SelectItem>
+            <SelectItem value="_header_number" disabled className="font-medium text-muted-foreground pl-2">
+              Number Functions
+            </SelectItem>
+            {Object.entries(functionMetadata)
+              .filter(([_, meta]) => !meta.requiresList)
+              .map(([key, { label }]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
+            ))}
+            
+            <SelectItem value="_header_list" disabled className="mt-2 border-t border-border font-medium text-muted-foreground pl-2">
+              List Functions
+            </SelectItem>
+            {Object.entries(functionMetadata)
+              .filter(([_, meta]) => meta.requiresList)
+              .map(([key, { label }]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
             ))}
           </SelectContent>
         </Select>

@@ -121,30 +121,30 @@ export function Canvas() {
   }, [setItems])
 
   return (
-    <div 
-      ref={canvasRef}
-      className="w-full h-screen bg-slate-50 dark:bg-slate-900 relative select-none"
-      onClick={handleCanvasClick}
-    >
-      {visibleItems.length === 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-muted-foreground space-y-2 pointer-events-none">
-          <div className="text-lg font-medium">Welcome to Formula Engine</div>
-          <div className="text-sm">Click anywhere on the canvas to create variables and formulas</div>
-          <div className="flex items-center gap-2 mt-4 text-xs">
-            <div className="flex items-center">
-              <LucideVariable className="mr-1 h-4 w-4" />
-              Variables
-            </div>
-            <div>•</div>
-            <div className="flex items-center">
-              <FunctionSquare className="mr-1 h-4 w-4" />
-              Formulas
+    <ClientOnly>
+      <div 
+        ref={canvasRef}
+        className="w-full h-screen bg-slate-50 dark:bg-slate-900 relative select-none"
+        onClick={handleCanvasClick}
+      >
+        {visibleItems.length === 0 && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-muted-foreground space-y-2 pointer-events-none">
+            <div className="text-lg font-medium">Welcome to Formula Engine</div>
+            <div className="text-sm">Click anywhere on the canvas to create variables and formulas</div>
+            <div className="flex items-center gap-2 mt-4 text-xs">
+              <div className="flex items-center">
+                <LucideVariable className="mr-1 h-4 w-4" />
+                Variables
+              </div>
+              <div>•</div>
+              <div className="flex items-center">
+                <FunctionSquare className="mr-1 h-4 w-4" />
+                Formulas
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <ClientOnly>
         <Suspense fallback={null}>
           {visibleItems.map(item => (
             item.type === 'variable' ? (
@@ -170,26 +170,26 @@ export function Canvas() {
             )
           ))}
         </Suspense>
-      </ClientOnly>
 
-      {menuPosition && (
-        <DropdownMenu defaultOpen onOpenChange={handleMenuClose}>
-          <DropdownMenuTrigger asChild>
-            <div 
-              className="absolute w-1 h-1"
-              style={{ left: menuPosition.x, top: menuPosition.y }}
-            />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={createVariable}>
-              <LucideVariable/> New Variable <PlusIcon className='ml-1'/>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={createFormula}>
-              <FunctionSquare/> New Formula <PlusIcon className='ml-1'/>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-    </div>
+        {menuPosition && (
+          <DropdownMenu defaultOpen onOpenChange={handleMenuClose}>
+            <DropdownMenuTrigger asChild>
+              <div 
+                className="absolute w-1 h-1"
+                style={{ left: menuPosition.x, top: menuPosition.y }}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={createVariable}>
+                <LucideVariable/> New Variable <PlusIcon className='ml-1'/>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={createFormula}>
+                <FunctionSquare/> New Formula <PlusIcon className='ml-1'/>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    </ClientOnly>
   )
 } 

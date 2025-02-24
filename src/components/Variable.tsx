@@ -8,6 +8,7 @@ import { LucideVariable, X as XIcon } from 'lucide-react'
 import { useDrag } from '@/hooks/useDrag'
 import { CanvasItem, Position } from '@/types'
 import { cn } from '@/lib/utils'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface VariableProps {
   item: CanvasItem
@@ -64,7 +65,8 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
     if (
       relatedTarget !== nameInputRef.current && 
       relatedTarget !== valueInputRef.current &&
-      relatedTarget !== typeSelectRef.current &&
+      !relatedTarget?.closest('[role="listbox"]') &&
+      !relatedTarget?.closest('[role="combobox"]') &&
       item.variableType
     ) {
       setIsEditing(false)
@@ -85,7 +87,8 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
       className={cn(
         "absolute w-64",
         !isEditing && "cursor-move",
-        "select-none"
+        "select-none",
+        "font-medium"
       )}
       style={{ left: position.x, top: position.y }}
       onMouseDown={handleMouseDown}
@@ -113,19 +116,22 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
               className="mb-2 cursor-text select-text"
               autoFocus
             />
-            <select
-              ref={typeSelectRef}
+            <Select
               value={item.variableType || ''}
-              onChange={handleTypeChange}
-              onBlur={handleBlur}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full p-2 mb-2 border rounded-md"
+              onValueChange={(value) => handleTypeChange({ target: { value } } as any)}
+              onOpenChange={(open) => !open && handleBlur({} as any)}
             >
-              <option value="">Select type...</option>
-              {types.map(type => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select type..." />
+              </SelectTrigger>
+              <SelectContent>
+                {types.map(type => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Input
               ref={valueInputRef}
               type={item.variableType === 'number' ? 'number' : 
@@ -134,7 +140,13 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
               onChange={handleValueChange}
               onBlur={handleBlur}
               onClick={(e) => e.stopPropagation()}
-              placeholder="Value"
+              placeholder={
+                item.variableType === 'number' ? "Value: (e.g., 42.5)" :
+                item.variableType === 'list' ? "Value: (e.g., 1, 2, 3, 4)" :
+                item.variableType === 'date' ? "Value: (e.g., 2024-01-01)" :
+                item.variableType === 'string' ? "Value: (e.g., 'Hello, world!')" :
+                "Select a type first"
+              }
               className="cursor-text select-text"
               step="any"
             />
