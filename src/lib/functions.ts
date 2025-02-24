@@ -12,6 +12,19 @@ export interface SubtractRequestBody {
   num1: number;
   num2: number;
 }
+
+export interface DivideRequestBody {
+  function: 'divide';
+  num1: number;
+  num2: number;
+}
+
+export interface MultiplyRequestBody {
+  function: 'multiply';
+  num1: number;
+  num2: number;
+}
+
 export interface ListRequestBody<T> {
   function: 'list';
   items: T[];
@@ -49,18 +62,7 @@ export interface ConcatRequestBody<T> {
 }
 
 
-export interface DivideRequestBody {
-  function: 'divide';
-  num1: number;
-  num2: number;
-}
 
-
-export interface MultiplyRequestBody {
-  function: 'multiply';
-  num1: number;
-  num2: number;
-}
 
 
 export interface FunctionRequestBody {
@@ -126,17 +128,18 @@ const add: FunctionHandler<AddRequestBody> = (reqBody) => {
 const subtract: FunctionHandler<SubtractRequestBody> = (reqBody) => {
   return reqBody.num1 - reqBody.num2;
 }
-<<<<<<< HEAD
+
+const multiply: FunctionHandler<MultiplyRequestBody> = (reqBody) => {
+  return reqBody.num1 * reqBody.num2;
+}
+
 const divide: FunctionHandler<DivideRequestBody> = (reqBody) => {
   if (reqBody.num2 === 0) {
     throw new Error('Division by zero is not allowed');
   }
   return reqBody.num1 / reqBody.num2;
 }
-const multiply: FunctionHandler<MultiplyRequestBody> = (reqBody) => {
-  return reqBody.num1 * reqBody.num2;
-}
-=======
+
 const list: FunctionHandler<ListRequestBody<any>> = (reqBody) => {
   //return the array body items
   return reqBody.items;
@@ -153,8 +156,6 @@ const last: FunctionHandler<LastRequestBody<any>> = (reqBody) => {
   //return the array body items
   return reqBody.items[reqBody.items.length - 1];
 }
-
-
 const sort: FunctionHandler<SortRequestBody<any>> = (reqBody) => {
   //return the array body items
   return reqBody.items.sort((a,b) =>{
@@ -179,15 +180,13 @@ const concat: FunctionHandler<ConcatRequestBody<any>> = (reqBody) => {
 }
 
 
->>>>>>> 13-listarrays-formula-feature
+
 // Function map
 const functionMap: Record<string, FunctionHandler<any>> = {
   add,
   subtract,
-<<<<<<< HEAD
   divide,
   multiply,
-=======
   list,
   at,
   first,
@@ -196,8 +195,6 @@ const functionMap: Record<string, FunctionHandler<any>> = {
   reverse,
   some,
   concat,
->>>>>>> 13-listarrays-formula-feature
-
 };
 
 
@@ -221,6 +218,22 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
       return { result: handler(reqBody) };
     } else if (isMultiplyRequestBody(reqBody)) {
       return { result: handler(reqBody) };
+    } else if (isListRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isAtRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isFirstRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isLastRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isSortRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isReverseRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isSomeRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isConcatRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
     }
 
     return { error: 'Invalid request body' };
@@ -229,33 +242,6 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
       error: error instanceof Error ? error.message : 'Unknown error occurred' 
     };
   }
-<<<<<<< HEAD
-=======
-  else if (isListRequestBody(reqBody)) {
-    return handler(reqBody);
-  }else if (isAtRequestBody(reqBody)) {
-    return handler(reqBody);
-  } else if (isFirstRequestBody(reqBody)) {
-    return handler(reqBody);
-  }
-  else if (isLastRequestBody(reqBody)) {
-    return handler(reqBody);
-  }
-  else if (isSortRequestBody(reqBody)) {
-    return handler(reqBody);
-  }
-  else if (isReverseRequestBody(reqBody)) {
-    return handler(reqBody);
-  }
-  else if (isSomeRequestBody(reqBody)) {
-    return handler(reqBody);
-  }
-  else if (isConcatRequestBody(reqBody)) {
-    return handler(reqBody);
-  }
-
-  return undefined;
->>>>>>> 13-listarrays-formula-feature
 };
 
 export default (req: NextApiRequest, res: NextApiResponse) => {
