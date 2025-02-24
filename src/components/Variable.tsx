@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { LucideVariable, X as XIcon } from 'lucide-react'
+import { LucideVariable, X as XIcon, CalendarIcon, Text as TextIcon, LetterText, BracketsIcon, FileDigit } from 'lucide-react'
 import { useDrag } from '@/hooks/useDrag'
 import { CanvasItem, Position } from '@/types'
 import { cn } from '@/lib/utils'
@@ -87,8 +87,7 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
       className={cn(
         "absolute w-64",
         !isEditing && "cursor-move",
-        "select-none",
-        "font-medium"
+        "select-none"
       )}
       style={{ left: position.x, top: position.y }}
       onMouseDown={handleMouseDown}
@@ -156,7 +155,19 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
             <h3 className="font-medium flex items-center">
               <LucideVariable className='mr-1 size-5'/>
               {item.name}
-              <span className="ml-2 text-sm text-muted-foreground">({item.variableType})</span>
+              <span className="ml-2 text-sm  text-muted-foreground">
+                {item.variableType === 'date' ? (
+                  <CalendarIcon className="h-4 w-4" />
+                ) : item.variableType === 'string' ? (
+                  <LetterText className="h-5 w-5" />
+                ) : item.variableType === 'number' ? (
+                  <FileDigit className="h-5 w-5" />
+                ) : item.variableType === 'list' ? (
+                  <BracketsIcon className="h-4 w-4" />
+                ) : (
+                  `(${item.variableType})`
+                )}
+              </span>
             </h3>
             <p className="text-sm text-muted-foreground">
               Value: {item.variableType === 'list' ? `[${item.value}]` : item.value}
