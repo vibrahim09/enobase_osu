@@ -10,6 +10,7 @@ import { useDrag } from '@/hooks/useDrag'
 import { CanvasItem, Position } from '@/types'
 import { cn } from '@/lib/utils'
 import { FunctionSquare } from 'lucide-react'
+import { FunctionRequestBody } from '@/lib/functions'
 
 interface FormulaEngineProps {
   item: CanvasItem
@@ -20,6 +21,80 @@ interface FormulaEngineProps {
   onEditingEnd: () => void
 }
 
+// Define function metadata for UI rendering with docs
+const functionMetadata = {
+  add: { 
+    label: 'Add', 
+    args: ['num1', 'num2'], 
+    icon: PlusIcon,
+    docs: 'returns the sum of two numbers\n\nexample: add(1, 2) => 3'
+  },
+  subtract: { 
+    label: 'Subtract', 
+    args: ['num1', 'num2'], 
+    icon: MinusIcon,
+    docs: 'returns the difference of two numbers\n\nexample: subtract(1, 2) => -1'
+  },
+  multiply: { 
+    label: 'Multiply', 
+    args: ['num1', 'num2'], 
+    icon: XIcon,
+    docs: 'returns the product of two numbers\n\nexample: multiply(1, 2) => 2'
+  },
+  divide: { 
+    label: 'Divide', 
+    args: ['num1', 'num2'], 
+    icon: DivideIcon,
+    docs: 'returns the quotient of two numbers\n\nexample: divide(1, 2) => 0.5'
+  },
+  median: { 
+    label: 'Median', 
+    args: ['numbers'],
+    requiresList: true,
+    docs: 'returns the median of a list variable\n\nexample: median([1, 2, 3]) => 2'
+  },
+  mean: { 
+    label: 'Mean', 
+    args: ['numbers'],
+    requiresList: true,
+    docs: 'returns the mean of a list variable\n\nexample: mean([1, 2, 3]) => 2'
+  },
+  min: { 
+    label: 'Minimum', 
+    args: ['numbers'],
+    requiresList: true,
+    docs: 'returns the minimum value in a list\n\nexample: min([1, 2, 3]) => 1'
+  },
+  max: { 
+    label: 'Maximum', 
+    args: ['numbers'],
+    requiresList: true,
+    docs: 'returns the maximum value in a list\n\nexample: max([1, 2, 3]) => 3'
+  },
+  round: { 
+    label: 'Round', 
+    args: ['number', 'precision?'],
+    docs: 'returns the number rounded to the precision\n\nexample: round(1.234, 2) => 1.23'
+  },
+  floor: { 
+    label: 'Floor', 
+    args: ['number'],
+    docs: 'returns the number rounded down to the nearest integer\n\nexample: floor(1.234) => 1'
+  },
+  ceil: { 
+    label: 'Ceiling', 
+    args: ['number'],
+    docs: 'returns the number rounded up to the nearest integer\n\nexample: ceil(1.234) => 2'
+  },
+  pow: { 
+    label: 'Power', 
+    args: ['base', 'exponent?'],
+    docs: 'returns the result of a base number raised to the exponent power\n\nexample: pow(2, 3) => 8'
+  },
+} as const
+
+type FunctionType = keyof typeof functionMetadata
+
 const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, onEditingEnd }: FormulaEngineProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [operand1, setOperand1] = useState<string>('')
@@ -29,6 +104,9 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
   const [isCalculating, setIsCalculating] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const calculationTimeoutRef = useRef<NodeJS.Timeout>()
+  const [selectedFunction, setSelectedFunction] = useState<FunctionType | ''>('')
+  const [inputs, setInputs] = useState<Record<string, string>>({})
+  const [arrayInputs, setArrayInputs] = useState<string[]>([])
 
   const { position, startDrag } = useDrag({
     initialPosition: item.position,
@@ -50,13 +128,10 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
   // Calculate result using backend API with debouncing
   useEffect(() => {
     const performCalculation = async () => {
-      if (!operand1 || !operand2 || !operator) {
+      if (!selectedFunction) {
         setResult(null)
         return
       }
-
-      const var1 = variables.find(v => v.id === operand1)?.value ?? 0
-      const var2 = variables.find(v => v.id === operand2)?.value ?? 0
 
       if (calculationTimeoutRef.current) {
         clearTimeout(calculationTimeoutRef.current)
@@ -67,39 +142,46 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
       }, 500)
 
       try {
-        const requestBody = {
-          function: operator,
-          num1: var1,
-          num2: var2
+        let requestBody: FunctionRequestBody = {
+          function: selectedFunction,
         }
 
-        console.log('Sending request:', requestBody)  // Debug log
+        // Build request body based on function type
+        const metadata = functionMetadata[selectedFunction]
+        
+        metadata.args.forEach(arg => {
+          const baseArg = arg.replace('?', '') // Remove optional indicator
+          if (inputs[baseArg]) {
+            const variable = variables.find(v => v.id === inputs[baseArg])
+            if (variable) {
+              if (variable.variableType === 'list') {
+                // Parse list string into array
+                const listValue = typeof variable.value === 'string' 
+                  ? variable.value.split(',').map(v => Number(v.trim()))
+                  : []
+                requestBody[baseArg] = listValue
+              } else {
+                requestBody[baseArg] = variable.value
+              }
+            }
+          }
+        })
 
         const response = await fetch('/api', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
         })
 
         const data = await response.json()
-        console.log('Received response:', data)  // Debug log
-
-        if ('message' in data) {
-          setResult(data.message)
-          return
-        }
         
         if ('error' in data) {
           setResult(data.error)
           return
         }
 
-        // Handle nested result structure
-        const resultValue = data.result?.result ?? data.result
+        const resultValue = data.result
         const numericResult = Number(resultValue)
-        console.log('Numeric result:', numericResult)  // Debug log
         
         setResult(
           Number.isFinite(numericResult) 
@@ -122,7 +204,7 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
         clearTimeout(calculationTimeoutRef.current)
       }
     }
-  }, [operand1, operand2, operator, variables])
+  }, [selectedFunction, inputs, variables])
 
   // Update linked variable when result changes
   useEffect(() => {
@@ -183,6 +265,51 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
     onEditingEnd()
   }
 
+  const renderInputs = () => {
+    if (!selectedFunction) return null
+
+    const metadata = functionMetadata[selectedFunction]
+
+    // Filter variables based on function requirements
+    const eligibleVariables = availableVariables.filter(variable => {
+      if (metadata.requiresList) {
+        return variable.variableType === 'list'
+      }
+      return variable.variableType === 'number' || variable.variableType === 'list'
+    })
+
+    return (
+      <div className="grid grid-cols-1 gap-2">
+        {metadata.args.map(arg => {
+          const isOptional = arg.endsWith('?')
+          const baseArg = arg.replace('?', '')
+          return (
+            <Select 
+              key={baseArg}
+              value={inputs[baseArg] || ''} 
+              onValueChange={(value) => setInputs(prev => ({ ...prev, [baseArg]: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={`${baseArg}${isOptional ? ' (optional)' : ''}`}/>
+              </SelectTrigger>
+              <SelectContent>
+                {eligibleVariables.map(variable => (
+                  <SelectItem 
+                    key={variable.id} 
+                    value={variable.id}
+                    disabled={metadata.requiresList && variable.variableType !== 'list'}
+                  >
+                    {variable.name} ({variable.variableType})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <Card
       ref={cardRef}
@@ -215,54 +342,41 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
             className="cursor-text select-text"
             autoFocus/>
         ) : (
-          <h3 className="font-medium flex items-center"><FunctionSquare className='mr-1 size-5'/>{item.name}</h3>
+          <h3 className="font-medium flex items-center">
+            <FunctionSquare className='mr-1 size-5'/>{item.name}
+          </h3>
         )}
 
-        <div className="grid grid-cols-3 gap-2">
-          <Select value={operand1} onValueChange={setOperand1}>
-            <SelectTrigger>
-              <SelectValue placeholder="Variable"/>
-            </SelectTrigger>
-            <SelectContent>
-              {availableVariables.map(variable => (
-                <SelectItem key={variable.id} value={variable.id}>
-                  {variable.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Select value={selectedFunction} onValueChange={(value: FunctionType) => {
+          setSelectedFunction(value)
+          setInputs({})
+          setArrayInputs([])
+        }}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Function"/>
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(functionMetadata).map(([key, { label }]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          <Select value={operator} onValueChange={setOperator}>
-            <SelectTrigger>
-              <SelectValue placeholder="Operator" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="add"><PlusIcon className='size-4'/></SelectItem>
-              <SelectItem value="subtract"><MinusIcon className='size-4'/></SelectItem>
-              <SelectItem value="multiply"><XIcon className='size-4'/></SelectItem>
-              <SelectItem value="divide"><DivideIcon className='size-4'/></SelectItem>
-            </SelectContent>
-          </Select>
+        {selectedFunction && (
+          <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md whitespace-pre-wrap">
+            {functionMetadata[selectedFunction].docs}
+          </div>
+        )}
 
-          <Select value={operand2} onValueChange={setOperand2}>
-            <SelectTrigger>
-              <SelectValue placeholder="Variable" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableVariables.map(variable => (
-                <SelectItem key={variable.id} value={variable.id}>
-                  {variable.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {renderInputs()}
 
         <div className="text-sm text-muted-foreground">
           Result: {isCalculating 
             ? 'Calculating...' 
             : typeof result === 'string'
-              ? result  // Display error message if result is a string
+              ? result
               : result !== null 
                 ? result.toFixed(2) 
                 : 'Select values to calculate'}

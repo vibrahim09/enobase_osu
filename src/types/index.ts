@@ -3,10 +3,12 @@ export interface Position {
   y: number
 }
 
-export interface CanvasItem {
+type CanvasItem = {
   id: string
   type: 'variable' | 'formula'
   position: Position
   name: string
-  value?: number
-} 
+  value?: string | number
+  isNew?: boolean  // Add this field
+  variableType?: 'number' | 'list' | 'string' | 'date'  // Changed 'integer' to 'number'
+}

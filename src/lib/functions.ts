@@ -1,30 +1,130 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 // Request body interfaces
+export interface FunctionRequestBody {
+  function: string;
+  [key: string]: any;
+}
+
+// Integer functions
+
+// add(num1: number, num2: number): number
+// returns the sum of two numbers
+// limited to 2 number arguments
+// example: add(1, 2) => 3
 export interface AddRequestBody {
   function: 'add';
   num1: number;
   num2: number;
 }
 
+// subtract(num1: number, num2: number): number
+// returns the difference of two numbers
+// limited to 2 number arguments
+// example: subtract(1, 2) => -1
 export interface SubtractRequestBody {
   function: 'subtract';
   num1: number;
   num2: number;
 }
 
+// divide(num1: number, num2: number): number
+// returns the quotient of two numbers
+// limited to 2 number arguments
+// example: divide(1, 2) => 0.5
 export interface DivideRequestBody {
   function: 'divide';
   num1: number;
   num2: number;
 }
 
+// multiply(num1: number, num2: number): number
+// returns the product of two numbers
+// limited to 2 number arguments
+// example: multiply(1, 2) => 2
 export interface MultiplyRequestBody {
   function: 'multiply';
   num1: number;
   num2: number;
 }
 
+// median(numbers: number[]): number
+// returns the median of an array of numbers
+// limited to an array of numbers
+// example: median([1, 2, 3]) => 2
+export interface MedianRequestBody {
+  function: 'median';
+  numbers: number[];
+}
+
+// mean(numbers: number[]): number
+// returns the mean of an array of numbers
+// limited to an array of numbers
+// example: mean([1, 2, 3]) => 2
+export interface MeanRequestBody {
+  function: 'mean';
+  numbers: number[];
+}
+
+// min(numbers: number[]): number
+// returns the minimum of an array of numbers
+// limited to an array of numbers
+// example: min([1, 2, 3]) => 1
+export interface MinRequestBody {
+  function: 'min',
+  numbers: number[]
+}
+
+// max(numbers: number[]): number
+// returns the maximum of an array of numbers
+// limited to an array of numbers
+// example: max([1, 2, 3]) => 3
+export interface MaxRequestBody {
+  function: 'max',
+  numbers: number[]
+}
+
+// round(number: number, precision?: number): number
+// returns the number rounded to the precision
+// limited to one number argument
+// example: round(1.234, 2) => 1.23
+export interface RoundRequestBody {
+  function: 'round',
+  number: number,
+  precision?: number,
+}
+
+// floor(number: number): number
+// returns the number rounded down to the nearest integer
+// limited to one number argument
+// example: floor(1.234) => 1
+export interface FloorRequestBody {
+  function: 'floor';
+  number: number;
+}
+
+// ceil(number: number): number
+// returns the number rounded up to the nearest integer
+// limited to one number argument
+// example: ceil(1.234) => 2
+export interface CeilRequestBody {
+  function: 'ceil';
+  number: number;
+}
+
+// pow(base: number, exponent: number): number
+// returns the result of a base number raised to the exponent power
+// limited to two number arguments
+// example: pow(2, 3) => 8
+export interface PowRequestBody {
+  function: 'pow';
+  base: number;
+  exponent?: number;
+}
+
+
+
+// Lists
 export interface ListRequestBody<T> {
   function: 'list';
   items: T[];
@@ -62,56 +162,6 @@ export interface ConcatRequestBody<T> {
 }
 
 
-
-
-
-export interface FunctionRequestBody {
-  function: string;
-  [key: string]: any;
-}
-
-export interface MedianRequestBody {
-  function: 'median';
-  numbers: number[];
-}
-
-export interface MeanRequestBody {
-  function: 'mean';
-  numbers: number[];
-}
-
-export interface MinRequestBody {
-  function: 'min',
-  numbers: number[]
-}
-
-export interface MaxRequestBody {
-  function: 'max',
-  numbers: number[]
-}
-
-export interface RoundRequestBody {
-  function: 'round',
-  number: number,
-  precision?: number,
-}
-
-export interface FloorRequestBody {
-  function: 'floor';
-  number: number;
-}
-
-export interface CeilRequestBody {
-  function: 'ceil';
-  number: number;
-}
-
-export interface PowRequestBody {
-  function: 'pow';
-  base: number;
-  exponent?: number;
-}
-
 // Type of the handler functions
 type FunctionHandler<T> = (reqBody: T) => any;
 
@@ -123,10 +173,10 @@ function isAddRequestBody(reqBody: FunctionRequestBody): reqBody is AddRequestBo
 function isSubtractRequestBody(reqBody: FunctionRequestBody): reqBody is SubtractRequestBody {
   return reqBody.function === 'subtract' && typeof reqBody.num1 === 'number' && typeof reqBody.num2 === 'number';
 }
+
 function isDivideRequestBody(reqBody: FunctionRequestBody): reqBody is DivideRequestBody {
   return reqBody.function === 'divide' && typeof reqBody.num1 === 'number' && typeof reqBody.num2 === 'number';
 }
-
 
 function isMultiplyRequestBody(reqBody: FunctionRequestBody): reqBody is MultiplyRequestBody {
   return reqBody.function === 'multiply' && typeof reqBody.num1 === 'number' && typeof reqBody.num2 === 'number';
@@ -164,14 +214,12 @@ function isPowRequestBody(reqBody: FunctionRequestBody): reqBody is PowRequestBo
   return reqBody.function === 'pow' && typeof reqBody.base === 'number' && (reqBody.exponent === undefined || typeof reqBody.exponent === 'number');
 }
 
-
 function isListRequestBody<T>(reqBody: FunctionRequestBody): reqBody is ListRequestBody<T> {
   return reqBody.function === 'list' && Array.isArray(reqBody.items);
 }
 function isAtRequestBody<T>(reqBody: FunctionRequestBody): reqBody is AtRequestBody<T> {
   return reqBody.function === 'at' && Array.isArray(reqBody.items) && typeof reqBody.index === 'number';
 }
-
 
 function isFirstRequestBody<T>(reqBody: FunctionRequestBody): reqBody is FirstRequestBody<T> {
   return reqBody.function === 'first' && Array.isArray(reqBody.items) && typeof reqBody.index === 'number';
@@ -189,7 +237,6 @@ function isSomeRequestBody<T>(reqBody: FunctionRequestBody): reqBody is SomeRequ
   return reqBody.function === 'some' && Array.isArray(reqBody.items) && typeof reqBody.predicate === 'function';
 }
 function isConcatRequestBody<T>(reqBody: FunctionRequestBody): reqBody is ConcatRequestBody<T> {
-  // Just
   return reqBody.function === 'concat' && Array.isArray(reqBody.lists);
 }
 
@@ -214,6 +261,44 @@ const divide: FunctionHandler<DivideRequestBody> = (reqBody) => {
   return reqBody.num1 / reqBody.num2;
 }
 
+const median: FunctionHandler<MedianRequestBody> = (reqBody) => {
+  const sortedNumbers = reqBody.numbers.slice().sort((a, b) => a - b);
+  const mid = Math.floor(sortedNumbers.length / 2);
+  return sortedNumbers.length % 2 !== 0 ? sortedNumbers[mid] : (sortedNumbers[mid - 1] + sortedNumbers[mid]) / 2;
+}
+
+const mean: FunctionHandler<MeanRequestBody> = (reqBody) => {
+  const sum = reqBody.numbers.reduce((acc, num) => acc + num, 0);
+  return sum / reqBody.numbers.length;
+}
+
+const min: FunctionHandler<MinRequestBody> = (reqBody) => {
+  return reqBody.numbers.length === 0 ? undefined : Math.min(...reqBody.numbers)
+}
+
+const max: FunctionHandler<MaxRequestBody> = (reqBody) => {
+  return reqBody.numbers.length === 0 ? undefined : Math.max(...reqBody.numbers)
+}
+
+const round: FunctionHandler<RoundRequestBody> = (reqBody) => {
+  const precision = reqBody.precision ?? 0
+  const factor = Math.pow(10, precision)
+  return Math.round(reqBody.number * factor) / factor
+}
+
+const floor: FunctionHandler<FloorRequestBody> = (reqBody) => {
+  return Math.floor(reqBody.number);
+}
+
+const ceil: FunctionHandler<CeilRequestBody> = (reqBody) => {
+  return Math.ceil(reqBody.number);
+}
+
+const pow: FunctionHandler<PowRequestBody> = (reqBody) => {
+  const exponent = reqBody.exponent ?? 2;
+  return Math.pow(reqBody.base, exponent);
+}
+
 const list: FunctionHandler<ListRequestBody<any>> = (reqBody) => {
   //return the array body items
   return reqBody.items;
@@ -223,6 +308,34 @@ const at: FunctionHandler<AtRequestBody<any>> = (reqBody) => {
   return reqBody.items[reqBody.index];
 }
 
+const first: FunctionHandler<FirstRequestBody<any>> = (reqBody) => {
+  //return the array body items
+  return reqBody.items[0];
+}
+const last: FunctionHandler<LastRequestBody<any>> = (reqBody) => {
+  //return the array body items
+  return reqBody.items[reqBody.items.length - 1];
+}
+const sort: FunctionHandler<SortRequestBody<any>> = (reqBody) => {
+  return reqBody.items.sort((a,b) =>{
+    if (a > b) return 1;
+    if (a < b) return -1;
+    return 0;
+  });
+}
+
+const reverse: FunctionHandler<ReverseRequestBody<any>> = (reqBody) => {
+  //return the array body items
+  return reqBody.items.reverse();
+}
+const some: FunctionHandler<SomeRequestBody<any>> = (reqBody) => {
+  //return the array body items
+  return reqBody.items.some(reqBody.predicate);
+}
+const concat: FunctionHandler<ConcatRequestBody<any>> = (reqBody) => {
+  //return the array into one big item
+  return reqBody.lists.flat();
+}
 
 
 // Function map
@@ -231,11 +344,23 @@ const functionMap: Record<string, FunctionHandler<any>> = {
   subtract,
   divide,
   multiply,
-
+  median,
+  mean,
+  min,
+  max,
+  round,
+  floor,
+  ceil,
+  pow,
+  list,
+  at,
+  first,
+  last,
+  sort,
+  reverse,
+  some,
+  concat,
 };
-
-
-
 
 
 // Export the dispatch function
@@ -254,6 +379,22 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
     } else if (isDivideRequestBody(reqBody)) {
       return { result: handler(reqBody) };
     } else if (isMultiplyRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isMedianRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isMeanRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isMinRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isMaxRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isRoundRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isFloorRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isCeilRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isPowRequestBody(reqBody)) {
       return { result: handler(reqBody) };
     } else if (isListRequestBody(reqBody)) {
       return { result: handler(reqBody) };
@@ -279,7 +420,6 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
       error: error instanceof Error ? error.message : 'Unknown error occurred' 
     };
   }
-
 };
 
 export default (req: NextApiRequest, res: NextApiResponse) => {
