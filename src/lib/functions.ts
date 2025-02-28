@@ -206,6 +206,56 @@ export interface ConcatRequestBody<T> {
   lists: T[][];
 }
 
+//Dates
+export interface NowRequestBody {
+  function: 'now';
+  
+}
+export interface TodayRequestBody {
+  function: 'today';
+  
+}
+// trying to extract out year information from a date
+export interface YearRequestBody{
+  function: 'year';
+  date: Date;
+}
+//month of the given date
+export interface MonthRequestBody {
+  function: 'month';
+  date: Date;
+
+}
+//day of the given date
+export interface DayRequestBody {
+  function: 'day';
+  date: Date;
+}
+export interface DateAddRequestBody {
+  function: 'dateAdd';
+  date: Date;
+  days: number;
+}
+export interface DateSubtractRequestBody {
+  function: 'dateSubtract';
+  date: Date;
+  days: number;
+}
+export interface DateBetweenRequestBody {
+  function: 'dateBetween';
+  startDate: Date;
+  endDate: Date;
+  unit: 'days' | 'months' | 'years'| 'hours' | 'minutes' | 'quateers' | 'seconds';
+}
+export interface DateRangeRequestBody {
+  function: 'dateRange';
+  startDate: Date;
+  endDate: Date;
+}
+export interface TimestampRequestBody{
+  function: 'timestamp';
+  date: Date;
+}
 
 //String funcitons
 
@@ -403,7 +453,37 @@ function isSomeRequestBody<T>(reqBody: FunctionRequestBody): reqBody is SomeRequ
 function isConcatRequestBody<T>(reqBody: FunctionRequestBody): reqBody is ConcatRequestBody<T> {
   return reqBody.function === 'concat' && Array.isArray(reqBody.lists);
 }
+function isNowRequestBody(reqBody: FunctionRequestBody): reqBody is NowRequestBody {
+  return reqBody.function === 'now' ;
+}
+function isTodayRequestBody(reqBody: FunctionRequestBody): reqBody is TodayRequestBody {
+  return reqBody.function === 'today' ;
+}
+function isYearRequestBody(reqBody: FunctionRequestBody): reqBody is YearRequestBody {
+  return reqBody.function === 'year' && reqBody.date instanceof Date;
+}
+function isMonthRequestBody(reqBody: FunctionRequestBody): reqBody is MonthRequestBody {
+  return reqBody.function === 'month' && reqBody.date instanceof Date;
 
+}
+function isDateAddRequestBody(reqBody: FunctionRequestBody): reqBody is DateAddRequestBody {
+  return reqBody.function === 'dateAdd' && reqBody.date instanceof Date && typeof reqBody.days === 'number';
+}
+function isDateSubtractRequestBody(reqBody: FunctionRequestBody): reqBody is DateSubtractRequestBody {
+  return reqBody.function === 'dateSubtract' && reqBody.date instanceof Date && typeof reqBody.days === 'number';
+}
+function isDayRequestBoady(reqBody: FunctionRequestBody): reqBody is DayRequestBody {
+  return reqBody.function === 'day' && reqBody.date instanceof Date;
+}
+function isDateBetweenRequestBody(reqBody: FunctionRequestBody): reqBody is DateBetweenRequestBody {
+  return reqBody.function === 'dateBetween' && reqBody.startDate instanceof Date && reqBody.endDate instanceof Date;
+}
+function isDateRangeRequestBody(reqBody: FunctionRequestBody): reqBody is DateRangeRequestBody {
+  return reqBody.function === 'dateRange' && reqBody.startDate instanceof Date && reqBody.endDate instanceof Date;
+}
+function isTimestampRequestBody(reqBody: FunctionRequestBody): reqBody is TimestampRequestBody {
+  return reqBody.function === 'timestamp' && reqBody.date instanceof Date;
+}
 
 //String functions
 function isSubstringRequestBody(reqBody: FunctionRequestBody): reqBody is SubstringRequestBody {
@@ -550,6 +630,60 @@ const concat: FunctionHandler<ConcatRequestBody<any>> = (reqBody) => {
   //return the array into one big item
   return reqBody.lists.flat();
 }
+const now: FunctionHandler<NowRequestBody> = (reqBody) => {
+  return new Date().toLocaleString();
+}
+const today : FunctionHandler<TodayRequestBody> = (reqBody) => {
+  return new Date().toLocaleDateString();
+}
+const year: FunctionHandler<YearRequestBody> = (reqBody) => {
+  return reqBody.date.getFullYear();
+}
+const month: FunctionHandler<MonthRequestBody> = (reqBody) => {
+  return reqBody.date.getMonth() + 1;
+}
+const day: FunctionHandler<DayRequestBody> = (reqBody) => {
+  return reqBody.date.getDate();
+}
+const dateAdd: FunctionHandler<DateAddRequestBody> = (reqBody) => {
+  const date = new Date(reqBody.date);
+  date.setDate(date.getDate() + reqBody.days);
+  return date;
+}
+const dateSubtract: FunctionHandler<DateSubtractRequestBody> = (reqBody) => {
+  const date = new Date(reqBody.date);
+  date.setDate(date.getDate() - reqBody.days);
+  return date;
+}
+const dateRange: FunctionHandler<DateRangeRequestBody> = (reqBody) => {
+  const { startDate, endDate } = reqBody;
+  return {startDate, endDate};
+  
+};
+const timestamp: FunctionHandler<TimestampRequestBody> = (reqBody) => {
+  return reqBody.date.getTime();
+}
+
+const dateBetween: FunctionHandler<DateBetweenRequestBody> = (reqBody) => {
+  const { startDate, endDate, unit } = reqBody;
+  const diff = endDate.getTime() - startDate.getTime();
+  switch (unit) {
+    case 'days':
+      return diff / (1000 * 60 * 60 * 24);
+    case 'months':
+      return diff / (1000 * 60 * 60 * 24 * 30);
+    case 'years':
+      return diff / (1000 * 60 * 60 * 24 * 365);
+    case 'hours':
+      return diff / (1000 * 60 * 60);
+    case 'minutes':
+      return diff / (1000 * 60);
+    case 'seconds':
+      return diff / 1000;
+    default:
+      throw new Error('Invalid unit');
+  }
+};
 
 
 //String functions
@@ -620,6 +754,16 @@ const functionMap: Record<string, FunctionHandler<any>> = {
   reverse,
   some,
   concat,
+  now, 
+  today,
+  year,
+  month,
+  day,
+  dateAdd,
+  dateSubtract,
+  dateRange,
+  dateBetween,
+  timestamp,
   substring,
   replace,
   replaceAll,
@@ -686,6 +830,22 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
       return { result: handler(reqBody) };
     } else if (isConcatRequestBody(reqBody)) {
       return { result: handler(reqBody) };
+    } else if (isNowRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isTodayRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isYearRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isMonthRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isDayRequestBoady(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isDateAddRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isDateSubtractRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    }else if (isDateRangeRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
     } //String functions
     else if (isSubstringRequestBody(reqBody)) {
       return handler(reqBody);
@@ -710,6 +870,12 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
     } else if (isJoinRequestBody(reqBody)) {
       return handler(reqBody);
     }
+    else if (isDateBetweenRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isTimestampRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    }
+
 
     return { error: 'Invalid request body' };
   } catch (error) {
