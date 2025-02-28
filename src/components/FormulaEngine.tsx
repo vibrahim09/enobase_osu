@@ -5,33 +5,12 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command'
-import { DivideIcon, MinusIcon, PlusIcon, X as XIcon, FileDigit, BracketsIcon, Type as TypeIcon, 
-   Replace, TextQuote, ArrowDownToLine, ArrowUpToLine, ArrowDownSquare, ArrowUpSquare,
-  ReplaceAllIcon,
-  LineChartIcon,
-  FileLineChartIcon,
-  AlignHorizontalJustifyEnd,
-  AlignHorizontalJustifyStart,
-  RotateCcw,
-  ListIcon,
-  ArrowDownToDot,
-  ChevronFirst,
-  ChevronLast,
-  ArrowUpZa,
-  Undo2,
-  CalendarIcon,
-  LucideVariable,
-  CaseLower,
-  CaseUpper,
-  Repeat,
-  Merge,
-  Superscript,
-  Sigma} from 'lucide-react'
+import { X as XIcon, LucideVariable, FunctionSquare} from 'lucide-react'
 import { useDrag } from '@/hooks/useDrag'
 import { CanvasItem, Position } from '@/types'
 import { cn } from '@/lib/utils'
-import { FunctionSquare } from 'lucide-react'
 import { FunctionRequestBody } from '@/lib/functions'
+import { functionMetadata } from '@/lib/formula-metadata'
 
 interface FormulaEngineProps {
   item: CanvasItem
@@ -42,258 +21,6 @@ interface FormulaEngineProps {
   onEditingEnd: () => void
 }
 
-// Define function metadata for UI rendering with docs
-const functionMetadata = {
-  // Number functions
-  add: { 
-    label: 'Add', 
-    args: ['num1', 'num2'], 
-    icon: PlusIcon,
-    docs: 'Returns the sum of two numbers\n\nexample: @add #1 #2 => 3',
-    type: 'number'
-  },
-  subtract: { 
-    label: 'Subtract', 
-    args: ['num1', 'num2'], 
-    icon: MinusIcon,
-    docs: 'Returns the difference of two numbers\n\nexample: @subtract #1 #2 => -1',
-    type: 'number'
-  },
-  multiply: { 
-    label: 'Multiply', 
-    args: ['num1', 'num2'], 
-    icon: XIcon,
-    docs: 'Returns the product of two numbers\n\nexample: @multiply #1 #2 => 2',
-    type: 'number'
-  },
-  divide: { 
-    label: 'Divide', 
-    args: ['num1', 'num2'], 
-    icon: DivideIcon,
-    docs: 'Returns the quotient of two numbers\n\nexample: @divide #1 #2 => 0.5',
-    type: 'number'
-  },
-  round: { 
-    label: 'Round', 
-    args: ['number', 'precision?'],
-    icon: RotateCcw,
-    docs: 'Returns the number rounded to the precision\n\nexample: @round #1.234 #2 => 1.23',
-    type: 'number'
-  },
-  floor: { 
-    label: 'Floor', 
-    args: ['number'],
-    icon: ArrowDownSquare,
-    docs: 'Returns the number rounded down to the nearest integer\n\nexample: @floor #1.234 => 1',
-    type: 'number'
-  },
-  ceil: { 
-    label: 'Ceiling', 
-    args: ['number'],
-    icon: ArrowUpSquare,
-    docs: 'Returns the number rounded up to the nearest integer\n\nexample: @ceil #1.234 => 2',
-    type: 'number'
-  },
-  pow: { 
-    label: 'Power', 
-    args: ['base', 'exponent?'],
-    icon: Superscript,
-    docs: 'Returns the result of a base number raised to the exponent power\n\nexample: @pow #2 #3 => 8',
-    type: 'number'
-  },
-  
-  // String functions
-  substring: {
-    label: 'Substring',
-    args: ['str', 'start', 'end?'],
-    icon: TextQuote,
-    docs: 'Returns a portion of a string\n\nexample: @substring #"hello" #1 #3 => "el"',
-    type: 'string'
-  },
-  replace: {
-    label: 'Replace',
-    args: ['str', 'text', 'replace'],
-    icon: Replace,
-    docs: 'Replaces text in a string\n\nexample: @replace #"hello" #"e" #"a" => "hallo"',
-    type: 'string'
-  },
-  replaceAll: {
-    label: 'Replace All',
-    args: ['str', 'text', 'replace'],
-    icon: ReplaceAllIcon,
-    docs: 'Replaces all occurrences of text in a string\n\nexample: @replaceAll #"hello" #"l" #"a" => "heaao"',
-    type: 'string'
-  },
-  lower: {
-    label: 'Lowercase',
-    args: ['str'],
-    icon: CaseLower,
-    docs: 'Converts string to lowercase\n\nexample: @lower #"Hello" => "hello"',
-    type: 'string'
-  },
-  upper: {
-    label: 'Uppercase',
-    args: ['str'],
-    icon: CaseUpper,
-    docs: 'Converts string to uppercase\n\nexample: @upper #"hello" => "HELLO"',
-    type: 'string'
-  },
-  padStart: {
-    label: 'Pad Start',
-    args: ['str', 'length', 'text'],
-    icon: AlignHorizontalJustifyEnd,
-    docs: 'Pads the start of a string\n\nexample: @padStart #"hello" #10 #" " => "     hello"',
-    type: 'string'
-  },
-  padEnd: {
-    label: 'Pad End',
-    args: ['str', 'length', 'text'],
-    icon: AlignHorizontalJustifyStart,
-    docs: 'Pads the end of a string\n\nexample: @padEnd #"hello" #10 #" " => "hello     "',
-    type: 'string'
-  },
-  repeat: {
-    label: 'Repeat',
-    args: ['str', 'count'],
-    icon: Repeat,
-    docs: 'Returns the string repeated count times\n\nexample: @repeat #"hello" #3 => "hellohellohello"',
-    type: 'string'
-  },
-  format: {
-    label: 'Format',
-    args: ['value'],
-    icon: TypeIcon,
-    docs: 'Returns the value formatted as a string\n\nexample: @format #1234567890 => "1234567890"',
-    type: 'string'
-  },
-
-  // List functions
-  median: { 
-    label: 'Median', 
-    args: ['numbers'],
-    requiresList: true,
-    paramName: 'numbers',
-    icon: LineChartIcon,
-    docs: 'Returns the median of a list variable\n\nexample: @median #[1, 2, 3] => 2',
-    type: 'list'
-  },
-  mean: { 
-    label: 'Mean', 
-    args: ['numbers'],
-    requiresList: true,
-    paramName: 'numbers',
-    icon: FileLineChartIcon,
-    docs: 'Returns the mean of a list variable\n\nexample: @mean #[1, 2, 3] => 2',
-    type: 'list'
-  },
-  min: { 
-    label: 'Minimum', 
-    args: ['numbers'],
-    requiresList: true,
-    paramName: 'numbers',
-    icon: ArrowDownToLine,
-    docs: 'Returns the minimum value in a list\n\nexample: @min #[1, 2, 3] => 1',
-    type: 'list'
-  },
-  max: { 
-    label: 'Maximum', 
-    args: ['numbers'],
-    requiresList: true,
-    paramName: 'numbers',
-    icon: ArrowUpToLine,
-    docs: 'Returns the maximum value in a list\n\nexample: @max #[1, 2, 3] => 3',
-    type: 'list'
-  },
-  join: {
-    label: 'Join',
-    args: ['list', 'separator'],
-    requiresList: true,
-    paramName: 'list',
-    icon: Merge,
-    docs: 'Returns the list joined by the separator\n\nexample: @join #["hello", "world"] #" " => "hello world"',
-    type: 'list'
-  },
-  list: {
-    label: 'List',
-    args: ['items'],
-    requiresList: true,
-    paramName: 'items',
-    icon: ListIcon,
-    docs: 'Returns the list of items\n\nexample: @list #[1, 2, 3] => [1, 2, 3]',
-    type: 'list'
-  },
-  at: {
-    label: 'At',
-    args: ['items', 'index'],
-    requiresList: true,
-    paramName: 'items',
-    icon: ArrowDownToDot,
-    docs: 'Returns the item at the index\n\nexample: @at #[1, 2, 3], 1 => 2',
-    type: 'list'
-  },
-  first: {
-    label: 'First',
-    args: ['items'],
-    requiresList: true,
-    paramName: 'items',
-    icon: ChevronFirst,
-    docs: 'Returns the first item in the list\n\nexample: @first #[1, 2, 3] => 1',
-    type: 'list'
-  },
-  last: {
-    label: 'Last',
-    args: ['items'],
-    requiresList: true,
-    paramName: 'items',
-    icon: ChevronLast,
-    docs: 'Returns the last item in the list\n\nexample: @last #[1, 2, 3] => 3',
-    type: 'list'
-  },
-  sort: {
-    label: 'Sort',
-    args: ['items'],
-    requiresList: true,
-    paramName: 'items',
-    icon: ArrowUpZa,
-    docs: 'Returns the list sorted in ascending order\n\nexample: @sort #[3, 1, 2] => [1, 2, 3]',
-    type: 'list'
-  },
-  reverse: {
-    label: 'Reverse',
-    args: ['items'],
-    requiresList: true,
-    paramName: 'items',
-    icon: Undo2,
-    docs: 'Returns the list reversed\n\nexample: @reverse #[1, 2, 3] => [3, 2, 1]',
-    type: 'list'
-  },
-  sum: { 
-    label: 'Sum', 
-    args: ['numbers'],
-    requiresList: true,
-    paramName: 'numbers',
-    icon: Sigma,
-    docs: 'Returns the sum of a list of numbers\n\nexample: @sum #[1, 2, 3] => 6',
-    type: 'list'
-  },
-  // concat: {
-  //   label: 'Concat',
-  //   args: ['lists'],
-  //   requiresList: true,
-  //   paramName: 'lists',
-  //   icon: SquareIcon,
-  //   docs: 'Returns the list of lists concatenated\n\nexample: concat([[1, 2], [3, 4]]) => [1, 2, 3, 4]',
-  //   type: 'list'
-  // },
-  // Date functions
-  formatDate: {
-    label: 'Format Date',
-    args: ['date', 'format', 'timezone?'],
-    icon: CalendarIcon,
-    docs: 'Returns the date formatted as a string\n\nexample: formatDate(new Date(), "yyyy-MM-dd") => "2024-01-01"',
-    type: 'date'
-  },
-} as const
 
 type FunctionType = keyof typeof functionMetadata
 
@@ -332,7 +59,7 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
         // Schedule calculation after a short delay to ensure state is updated
         setTimeout(() => {
           calculateResult();
-        }, 1000);
+        }, 500);
       }
     }
   }, [item.formula, item.calculateAfterUpdate]);
@@ -560,6 +287,55 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
     return value
   }
 
+  // Helper function to check if a string is a valid date format
+  const isDateString = (str: string): boolean => {
+    // Check common date formats: YYYY-MM-DD, MM/DD/YYYY, etc.
+    const dateRegex = /^\d{4}-\d{1,2}-\d{1,2}$|^\d{1,2}\/\d{1,2}\/\d{4}$/;
+    return dateRegex.test(str);
+  }
+
+  // Helper function to convert a value to a Date object if it's a date string
+  const convertToDateIfNeeded = (value: any, argName: string, functionName: string): any => {
+    // Check if this is a date-related function and argument
+    const isDateFunction = functionMetadata[functionName as keyof typeof functionMetadata]?.type === 'date';
+    const isDateArg = ['date', 'startDate', 'endDate'].includes(argName);
+    
+    if (isDateFunction && isDateArg && typeof value === 'string') {
+      // If it's a date string, convert to Date object
+      if (isDateString(value)) {
+        return new Date(value);
+      }
+    }
+    
+    // For unit parameter in date functions, ensure it's a string
+    if (isDateFunction && argName === 'unit') {
+      // If it's a number, convert to a default unit (days)
+      if (typeof value === 'number') {
+        return 'days';
+      }
+      
+      // If it's a string, ensure it's one of the valid units
+      if (typeof value === 'string') {
+        // Remove quotes if present
+        const cleanValue = value.replace(/^["']|["']$/g, '');
+        
+        // Check if it's a valid unit
+        const validUnits = ['days', 'months', 'years', 'hours', 'minutes', 'seconds', 'quarters'];
+        if (validUnits.includes(cleanValue.toLowerCase())) {
+          return cleanValue.toLowerCase();
+        }
+        
+        // Default to days if not valid
+        return 'days';
+      }
+      
+      // Default to days for any other type
+      return 'days';
+    }
+    
+    return value;
+  }
+
   const calculateResult = async () => {
     setIsCalculating(true)
     setShowDropdown(false)
@@ -590,17 +366,18 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
 
       // Process all arguments after the function name
       metadata.args.forEach((arg, index) => {
-        const value = getValue(parts[index + 1] || '')
-        if (value !== null) {
-          const argName = arg.replace('?', '')
-          if (Array.isArray(value)) {
+        const rawValue = getValue(parts[index + 1] || '');
+        if (rawValue !== null && rawValue !== undefined) {
+          const argName = arg.replace('?', '');
+          
+          if (Array.isArray(rawValue)) {
             // Use the specified paramName from metadata if available
-            const arrayParamName = (metadata as any).paramName || 'numbers'
-            requestBody[arrayParamName] = value
-          } else if (typeof value === 'string') {
-            requestBody[argName] = value
+            const arrayParamName = (metadata as any).paramName || 'numbers';
+            requestBody[arrayParamName] = rawValue;
           } else {
-            requestBody[argName] = Number(value)
+            // Convert to Date object if needed
+            const processedValue = convertToDateIfNeeded(rawValue, argName, functionName);
+            requestBody[argName] = processedValue;
           }
         }
       })
@@ -617,7 +394,7 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
       
       // Check both response status and error in data
       if (!response.ok || 'error' in data) {
-        setResult(`Error: ${data.error || response.statusText}`)
+        setResult(`Error: ${data.error || response.statusText || data.message}`)
       } else {
         const result = data.result
         if (Array.isArray(result)) {
@@ -625,6 +402,8 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
           setResult(`[${result.join(', ')}]`)
         } else if (typeof result === 'number') {
           setResult(Number(result.toFixed(2)))
+        } else if (result instanceof Date) {
+          setResult(result.toLocaleDateString())
         } else {
           setResult(result)
         }
@@ -814,13 +593,13 @@ const FormulaEngine = ({ item, variables, onPositionChange, onUpdate, onDelete, 
             <Command
               ref={commandRef}
               className={cn(
-                "absolute z-50 rounded-lg border shadow-md bg-popover h-[650px] overflow-hidden",
+                "absolute z-50 rounded-lg border shadow-md bg-popover h-[800px] overflow-hidden",
                 // Adjust width based on dropdown type and content
                 dropdownType === 'variables' ? "w-[150px] h-auto" : "w-auto h-auto"
               )}
               onKeyDown={handleKeyDown}
             >
-              <CommandList className="max-h-[650px] overflow-auto">
+              <CommandList className="max-h-[850px] overflow-auto">
                 {(() => {
                   const filtered = getFilteredItems()
                   

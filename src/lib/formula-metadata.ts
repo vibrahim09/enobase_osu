@@ -28,7 +28,19 @@ import {
   Undo2,
   Sigma,
   Calendar as CalendarIcon,
-  ReplaceAll
+  ReplaceAll,
+  Clock,
+  CalendarDays,
+  CalendarClock,
+  CalendarRange,
+  Timer,
+  CalendarCheck,
+  CalendarX,
+  CalendarPlus,
+  CalendarMinus,
+  Calendar1Icon,
+  CalendarFold,
+  CalendarArrowDown
 } from 'lucide-react'
 
 
@@ -271,7 +283,77 @@ export const functionMetadata = {
     label: 'Format Date',
     args: ['date', 'format', 'timezone?'],
     icon: CalendarIcon,
-    docs: 'Returns the date formatted as a string\n\nexample: formatDate(new Date(), "yyyy-MM-dd") => "2024-01-01"',
+    docs: 'Returns the date formatted as a string\n\nexample: @formatDate #date #"yyyy-MM-dd" => "2024-01-01"',
     type: 'date'
   },
+  now: {
+    label: 'Now',
+    args: [],
+    icon: Clock,
+    docs: 'Returns the current date and time\n\nexample: @now => "5/15/2024, 10:30:45 AM"',
+    type: 'date'
+  },
+  today: {
+    label: 'Today',
+    args: [],
+    icon: CalendarDays,
+    docs: 'Returns the current date\n\nexample: @today => "5/15/2024"',
+    type: 'date'
+  },
+  year: {
+    label: 'Year',
+    args: ['date'],
+    icon: CalendarClock,
+    docs: 'Returns the year of the given date\n\nexample: @year #date => 2024',
+    type: 'date'
+  },
+  month: {
+    label: 'Month',
+    args: ['date'],
+    icon: CalendarFold,
+    docs: 'Returns the month of the given date\n\nexample: @month #date => 5',
+    type: 'date'
+  },
+  day: {
+    label: 'Day',
+    args: ['date'],
+    icon: Calendar1Icon,
+    docs: 'Returns the day of the given date\n\nexample: @day #date => 15',
+    type: 'date'
+  },
+  dateAdd: {
+    label: 'Date Add',
+    args: ['date', 'days'],
+    icon: CalendarPlus,
+    docs: 'Returns the date after adding the given number of days\n\nexample: @dateAdd #date #1 => "5/16/2024"',
+    type: 'date'
+  },
+  dateSubtract: {
+    label: 'Date Subtract',
+    args: ['date', 'days'],
+    icon: CalendarMinus,
+    docs: 'Returns the date after subtracting the given number of days\n\nexample: @dateSubtract #date #1 => "5/14/2024"',
+    type: 'date'
+  },
+  dateBetween: {
+    label: 'Date Between',
+    args: ['startDate', 'endDate', 'unit'],
+    icon: CalendarRange,
+    docs: 'Returns the difference between two dates in the given unit\n\nexample: @dateBetween #startDate #endDate #"days" => 5',
+    type: 'date'
+  },
+  dateRange: {
+    label: 'Date Range',
+    args: ['startDate', 'endDate', 'unit'],
+    icon: CalendarArrowDown,
+    docs: 'Returns the range of dates between the two dates in the given unit\n\nexample: @dateRange #startDate #endDate #"days" => [date1, date2, ...]',
+    type: 'date'
+  },
+  timestamp: {
+    label: 'Timestamp',
+    args: ['date'],
+    icon: Timer,
+    docs: 'Returns the timestamp of the given date\n\nexample: @timestamp #date => 1714531200000',
+    type: 'date'
+  }
 } as const 

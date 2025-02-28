@@ -28,6 +28,8 @@ export type CanvasItem = {
   | {
       type: 'formula'
       value?: string
+      formula?: string
+      calculateAfterUpdate?: boolean
     }
   | {
       type: 'grid'

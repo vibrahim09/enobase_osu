@@ -206,56 +206,7 @@ export interface ConcatRequestBody<T> {
   lists: T[][];
 }
 
-//Dates
-export interface NowRequestBody {
-  function: 'now';
-  
-}
-export interface TodayRequestBody {
-  function: 'today';
-  
-}
-// trying to extract out year information from a date
-export interface YearRequestBody{
-  function: 'year';
-  date: Date;
-}
-//month of the given date
-export interface MonthRequestBody {
-  function: 'month';
-  date: Date;
 
-}
-//day of the given date
-export interface DayRequestBody {
-  function: 'day';
-  date: Date;
-}
-export interface DateAddRequestBody {
-  function: 'dateAdd';
-  date: Date;
-  days: number;
-}
-export interface DateSubtractRequestBody {
-  function: 'dateSubtract';
-  date: Date;
-  days: number;
-}
-export interface DateBetweenRequestBody {
-  function: 'dateBetween';
-  startDate: Date;
-  endDate: Date;
-  unit: 'days' | 'months' | 'years'| 'hours' | 'minutes' | 'quateers' | 'seconds';
-}
-export interface DateRangeRequestBody {
-  function: 'dateRange';
-  startDate: Date;
-  endDate: Date;
-}
-export interface TimestampRequestBody{
-  function: 'timestamp';
-  date: Date;
-}
 
 //String funcitons
 
@@ -351,6 +302,114 @@ export interface FormatRequestBody {
   value: any;
 }
 
+//join(list: any[], separator: string): string
+//returns the list joined by the separator
+//limited to two string arguments
+//example: join(["hello", "world"], " ") => "hello world"
+export interface JoinRequestBody {
+  function: 'join';
+  list: any[];
+  separator: string;
+}
+
+//Date functions
+
+//now(): Date
+//returns the current date and time
+//limited to no arguments
+//example: now() => new Date()
+export interface NowRequestBody {
+  function: 'now';
+  
+}
+
+//today(): Date
+//returns the current date
+//limited to no arguments
+//example: today() => new Date()  
+export interface TodayRequestBody {
+  function: 'today';
+  
+}
+
+//year(date: Date): number
+//returns the year of the given date
+//limited to one date argument
+//example: year(new Date()) => 2025
+export interface YearRequestBody{
+  function: 'year';
+  date: Date;
+}
+
+//month(date: Date): number
+//returns the month of the given date
+//limited to one date argument
+//example: month(new Date()) => 3
+export interface MonthRequestBody {
+  function: 'month';
+  date: Date;
+
+}
+//day(date: Date): number
+//returns the day of the given date
+//limited to one date argument
+//example: day(new Date()) => 1
+export interface DayRequestBody {
+  function: 'day';
+  date: Date;
+}
+
+//dateAdd(date: Date, days: number): Date 
+//returns the date after adding the given number of days
+//limited to two arguments
+//example: dateAdd(new Date(), 1) => new Date(2025, 2, 2)
+export interface DateAddRequestBody {
+  function: 'dateAdd';
+  date: Date;
+  days: number;
+}
+
+//dateSubtract(date: Date, days: number): Date 
+//returns the date after subtracting the given number of days
+//limited to two arguments
+//example: dateSubtract(new Date(), 1) => new Date(2025, 2, 1)
+export interface DateSubtractRequestBody {
+  function: 'dateSubtract';
+  date: Date;
+  days: number;
+}
+
+//dateBetween(startDate: Date, endDate: Date, unit: 'days' | 'months' | 'years'| 'hours' | 'minutes' | 'quateers' | 'seconds'): number
+//returns the difference between the two dates in the given unit
+//limited to three arguments
+//example: dateBetween(new Date(), new Date(), 'days') => 1
+export interface DateBetweenRequestBody {
+  function: 'dateBetween';
+  startDate: Date;
+  endDate: Date;
+  unit: 'days' | 'months' | 'years'| 'hours' | 'minutes' | 'quateers' | 'seconds';
+}
+
+//dateRange(startDate: Date, endDate: Date, unit: 'days' | 'months' | 'years'| 'hours' | 'minutes' | 'quateers' | 'seconds'): number[]
+//returns the range of dates between the two dates in the given unit
+//limited to three arguments
+//example: dateRange(new Date(), new Date(), 'days') => [new Date(), new Date(2025, 2, 2)]
+export interface DateRangeRequestBody {
+  function: 'dateRange';
+  startDate: Date;
+  endDate: Date;
+  unit: 'days' | 'months' | 'years'| 'hours' | 'minutes' | 'quateers' | 'seconds';
+}
+
+//timestamp(date: Date): number
+//returns the timestamp of the given date
+//limited to one date argument
+//example: timestamp(new Date()) => 1714531200000
+export interface TimestampRequestBody{
+  function: 'timestamp';
+  date: Date;
+}
+
 //formatDate(date: Date, format: string, timezone?: string): string
 //returns the date formatted as a string
 //limited to three string arguments
@@ -360,16 +419,6 @@ export interface FormatDateRequestBody {
   date: Date;
   format: string;
   timezone?: string;
-}
-
-//join(list: any[], separator: string): string
-//returns the list joined by the separator
-//limited to two string arguments
-//example: join(["hello", "world"], " ") => "hello world"
-export interface JoinRequestBody {
-  function: 'join';
-  list: any[];
-  separator: string;
 }
 
 // Type of the handler functions

@@ -235,7 +235,7 @@ export function Canvas() {
     const newFormula: CanvasItem = {
       id: `formula-${Date.now()}`,
       type: 'formula',
-      name: 'AI Generated Formula',
+      name: 'Generated Formula',
       position: {
         x: 700,  // Fixed position
         y: 700
@@ -291,7 +291,7 @@ export function Canvas() {
               setTimeout(() => {
                 console.log("Triggering calculation now");
                 calculateResult(formulaId);
-              }, 1000); // 1 second delay before calculation
+              }, 500); // 500ms delay before calculation
             }, 500); // 500ms delay after setting formula
           }
         }
