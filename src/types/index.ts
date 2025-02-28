@@ -3,12 +3,35 @@ export interface Position {
   y: number
 }
 
-type CanvasItem = {
+export interface GridColumn {
+  field: string
+  header: string
+  type: 'number' | 'string' | 'date'
+}
+
+export interface GridRow {
+  [key: string]: string | number | Date
+}
+
+export type CanvasItem = {
   id: string
-  type: 'variable' | 'formula'
+  type: 'variable' | 'formula' | 'grid'
   position: Position
   name: string
-  value?: string | number
-  isNew?: boolean  // Add this field
-  variableType?: 'number' | 'list' | 'string' | 'date'  // Changed 'integer' to 'number'
-}
+  isNew?: boolean
+} & (
+  | {
+      type: 'variable'
+      value?: string | number | Array<any>
+      variableType?: 'number' | 'list' | 'string' | 'date'
+    }
+  | {
+      type: 'formula'
+      value?: string
+    }
+  | {
+      type: 'grid'
+      columns: GridColumn[]
+      rows: GridRow[]
+    }
+)

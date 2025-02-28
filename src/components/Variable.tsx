@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { LucideVariable, X as XIcon, CalendarIcon, Text as TextIcon, LetterText, BracketsIcon, FileDigit } from 'lucide-react'
+import { LucideVariable, X as XIcon, CalendarIcon, Text as TextIcon, LetterText, BracketsIcon, FileDigit, TypeIcon } from 'lucide-react'
 import { useDrag } from '@/hooks/useDrag'
 import { CanvasItem, Position } from '@/types'
 import { cn } from '@/lib/utils'
@@ -25,6 +25,7 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
   const nameInputRef = useRef<HTMLInputElement>(null)
   const valueInputRef = useRef<HTMLInputElement>(null)
   const typeSelectRef = useRef<HTMLSelectElement>(null)
+  const [editingValue, setEditingValue] = useState<string>('')
 
   const types = ['number', 'list', 'string', 'date'] as const
 
@@ -33,6 +34,13 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
     onDragEnd: onPositionChange,
     disabled: isEditing,
   })
+
+  // Initialize editingValue when entering edit mode
+  useEffect(() => {
+    if (isEditing && item.variableType === 'list' && Array.isArray(item.value)) {
+      setEditingValue(`[${item.value.join(', ')}]`)
+    }
+  }, [isEditing, item.value, item.variableType])
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!isEditing) {
@@ -50,14 +58,37 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
   }
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value: string | number = e.target.value
-    if (item.variableType === 'number') {
-      const numValue = parseFloat(value)
-      if (!isNaN(numValue)) {
-        value = numValue
+    if (item.variableType === 'list') {
+      setEditingValue(e.target.value)
+    } else {
+      let value: string | number = e.target.value
+      if (item.variableType === 'number') {
+        const numValue = parseFloat(value)
+        if (!isNaN(numValue)) {
+          value = numValue
+        }
       }
+      onUpdate({ value })
     }
-    onUpdate({ value })
+  }
+
+  const handleValueBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (item.variableType === 'list') {
+      // Convert string to array only on blur
+      const value = editingValue
+        .replace(/^\[|\]$/g, '')  // Remove brackets
+        .split(',')               // Split by comma
+        .map(item => item.trim()) // Trim whitespace
+        .filter(Boolean)          // Remove empty entries
+        .map(item => {
+          // Try to convert to number if possible, otherwise keep as string
+          const num = Number(item)
+          return !isNaN(num) ? num : item.replace(/^["']|["']$/g, '') // Remove quotes if present
+        })
+      
+      onUpdate({ value })
+    }
+    handleBlur(e)
   }
 
   const handleBlur = (e: React.FocusEvent) => {
@@ -135,13 +166,15 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
               ref={valueInputRef}
               type={item.variableType === 'number' ? 'number' : 
                     item.variableType === 'date' ? 'date' : 'text'}
-              value={item.value}
+              value={item.variableType === 'list' ? 
+                    editingValue :
+                    item.value}
               onChange={handleValueChange}
-              onBlur={handleBlur}
+              onBlur={handleValueBlur}
               onClick={(e) => e.stopPropagation()}
               placeholder={
                 item.variableType === 'number' ? "Value: (e.g., 42.5)" :
-                item.variableType === 'list' ? "Value: (e.g., 1, 2, 3, 4)" :
+                item.variableType === 'list' ? "Value: (e.g., [1, abc, 3, def])" :
                 item.variableType === 'date' ? "Value: (e.g., 2024-01-01)" :
                 item.variableType === 'string' ? "Value: (e.g., 'Hello, world!')" :
                 "Select a type first"
@@ -159,7 +192,7 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
                 {item.variableType === 'date' ? (
                   <CalendarIcon className="h-4 w-4" />
                 ) : item.variableType === 'string' ? (
-                  <LetterText className="h-5 w-5" />
+                  <TypeIcon className="h-4 w-4" />
                 ) : item.variableType === 'number' ? (
                   <FileDigit className="h-5 w-5" />
                 ) : item.variableType === 'list' ? (
@@ -170,7 +203,9 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
               </span>
             </h3>
             <p className="text-sm text-muted-foreground">
-              Value: {item.variableType === 'list' ? `[${item.value}]` : item.value}
+              Value: {item.variableType === 'list' && Array.isArray(item.value) ? 
+                     `[${item.value.join(', ')}]` : 
+                     item.value}
             </p>
           </div>
         )}

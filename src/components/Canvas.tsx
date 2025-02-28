@@ -5,15 +5,24 @@ import { useState, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
-import { Position, CanvasItem } from '@/types'
+import { Position, CanvasItem } from '@/types/index'
 import { ClientOnly } from './ClientOnly'
-import { FunctionSquare, LucideVariable, PlusIcon } from 'lucide-react'
+import { FunctionSquare, LucideVariable, PlusIcon, TableIcon, Download } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { AIChatSidebar } from '@/components/AIChatSidebar'
+
+// Import function metadata for the formula engine
+import { functionMetadata as FormulaMetadata } from '@/lib/formula-metadata'
 
 const Variable = dynamic(() => import('@/components/Variable').then(mod => mod.Variable), {
   ssr: false
 })
 
 const FormulaEngine = dynamic(() => import('@/components/FormulaEngine').then(mod => mod.FormulaEngine), {
+  ssr: false
+})
+
+const DataGrid = dynamic(() => import('@/components/DataGrid').then(mod => mod.DataGrid), {
   ssr: false
 })
 
@@ -35,7 +44,7 @@ export function Canvas() {
     }
 
     if (e.target === canvasRef.current) {
-      setMenuPosition({ x: e.clientX, y: e.clientY })
+      setMenuPosition({ x: e.clientX + 50, y: e.clientY })
     }
   }, [ignoreNextClick])
 
@@ -107,6 +116,230 @@ export function Canvas() {
     setMenuPosition(null)
   }, [menuPosition, setItems])
 
+  const handleCreateVariable = useCallback((gridId: string, variable: Partial<CanvasItem>) => {
+    const newVariable: CanvasItem = {
+      id: `var-${Date.now()}`,
+      ...variable,
+      position: variable.position || { x: 100, y: 100 }
+    }
+    
+    setItems(prev => [...prev, newVariable])
+  }, [setItems])
+
+  // New function to handle formula creation from LLM
+  const handleCreateFormulaFromLLM = useCallback((formulaString: string, variableNames: string[]) => {
+    // Check if variables exist in the canvas
+    const existingVariables = items.filter(item => item.type === 'variable')
+    const missingVariables: string[] = []
+    
+    // Find which variables are missing
+    variableNames.forEach(varName => {
+      const exists = existingVariables.some(v => 
+        v.name.toLowerCase() === varName.toLowerCase()
+      )
+      if (!exists) {
+        missingVariables.push(varName)
+      }
+    })
+    
+    // Find grid columns that match missing variable names
+    const grids = items.filter(item => item.type === 'grid')
+    
+    missingVariables.forEach(varName => {
+      // Check each grid for a matching column
+      for (const grid of grids) {
+        if (!grid.columns) continue
+        
+        const matchingColumn = grid.columns.find(col => 
+          col.header.toLowerCase() === varName.toLowerCase() || 
+          col.field.toLowerCase() === varName.toLowerCase()
+        )
+        
+        if (matchingColumn) {
+          // Extract values from the grid
+          const values = grid.rows?.map(row => {
+            // Ensure numeric values are properly parsed as numbers
+            if (matchingColumn.type === 'number') {
+              const val = row[matchingColumn.field];
+              return typeof val === 'number' ? val : parseFloat(String(val));
+            }
+            return row[matchingColumn.field];
+          }) || [];
+          
+          // Use handleCreateVariable to create the variable from the grid column
+          handleCreateVariable(grid.id, {
+            type: 'variable',
+            name: matchingColumn.header || matchingColumn.field,
+            // Always set variableType to "list" for grid columns since they contain multiple values
+            variableType: "list",
+            // Pass the properly processed values
+            value: values,
+            position: {
+              x: 500,  // Random position
+              y: 500
+            }
+          })
+          
+          // Replace the variable name in the formula with the actual values
+          // Format the values appropriately for the formula
+          let formattedValues;
+          if (matchingColumn.type === 'number') {
+            formattedValues = `[${values.join(', ')}]`;
+          } else {
+            // For strings, wrap each value in quotes
+            formattedValues = `[${values.map(v => `"${v}"`).join(', ')}]`;
+          }
+          
+          // Replace the variable reference with the actual values
+          formulaString = formulaString.replace(
+            new RegExp(`#${varName}\\b`, 'gi'), 
+            `#${formattedValues}`
+          );
+          
+          break // Found a match, no need to check other grids
+        }
+      }
+    })
+    
+    // For existing variables, also replace their names with values in the formula
+    existingVariables.forEach(variable => {
+      const varNamePattern = new RegExp(`#${variable.name}\\b`, 'gi');
+      
+      if (formulaString.match(varNamePattern)) {
+        // Format the value appropriately based on its type
+        let formattedValue;
+        
+        if (Array.isArray(variable.value)) {
+          if (variable.variableType === 'list' && variable.value.every(v => typeof v === 'number')) {
+            // Numeric list
+            formattedValue = `[${variable.value.join(', ')}]`;
+          } else {
+            // String list or mixed list
+            formattedValue = `[${variable.value.map(v => 
+              typeof v === 'string' ? `"${v}"` : v
+            ).join(', ')}]`;
+          }
+        } else if (typeof variable.value === 'string') {
+          formattedValue = `"${variable.value}"`;
+        } else {
+          // Number or other type
+          formattedValue = variable.value;
+        }
+        
+        // Replace the variable reference with the actual value
+        formulaString = formulaString.replace(varNamePattern, `#${formattedValue}`);
+      }
+    });
+    
+    // Create the formula component
+    const newFormula: CanvasItem = {
+      id: `formula-${Date.now()}`,
+      type: 'formula',
+      name: 'AI Generated Formula',
+      position: {
+        x: 700,  // Fixed position
+        y: 700
+      }
+    }
+    
+    // Add the formula to the canvas
+    setItems(prev => [...prev, newFormula])
+    
+    // We need to wait for the formula to be created before setting its value
+    setTimeout(() => {
+      // Instead of manipulating the DOM directly, use the updateItem function
+      // to update the formula's internal state through React
+      
+      // First, find the formula component we just created
+      const formulaId = newFormula.id;
+      
+      // Implement typewriter effect using React state updates
+      let currentIndex = 0;
+      const typingSpeed = 50; // milliseconds per character
+      
+      const typeNextChar = () => {
+        if (currentIndex <= formulaString.length) {
+          // Get the partial formula
+          const partialFormula = formulaString.substring(0, currentIndex);
+          
+          // Update the formula component with the partial text
+          // This uses the component's internal formula state
+          updateItem(formulaId, { 
+            formula: partialFormula 
+          });
+          
+          // Move to next character
+          currentIndex++;
+          
+          // Continue typing if not finished
+          if (currentIndex <= formulaString.length) {
+            setTimeout(typeNextChar, typingSpeed);
+          } else {
+            // Typing is complete - ensure the final value is set correctly
+            console.log("Typing complete, setting final formula:", formulaString);
+            
+            // First, set the complete formula without triggering calculation
+            updateItem(formulaId, { 
+              formula: formulaString
+            });
+            
+            // Then wait a moment to ensure the formula is processed
+            setTimeout(() => {
+              console.log("Formula set, preparing to calculate...");
+              
+              // Now trigger the calculation after a delay
+              setTimeout(() => {
+                console.log("Triggering calculation now");
+                calculateResult(formulaId);
+              }, 1000); // 1 second delay before calculation
+            }, 500); // 500ms delay after setting formula
+          }
+        }
+      };
+      
+      // Start the typewriter effect after a short delay
+      setTimeout(typeNextChar, 500);
+    }, 500);
+    
+  }, [items, setItems, updateItem, handleCreateVariable])
+
+  // Helper function to trigger calculation on a formula
+  const calculateResult = useCallback((formulaId: string) => {
+    // Find the calculate button in the formula component and click it
+    const formulaElement = document.querySelector(`[data-id="${formulaId}"]`);
+    if (formulaElement) {
+      const calculateButton = formulaElement.querySelector('button');
+      if (calculateButton && calculateButton instanceof HTMLButtonElement) {
+        calculateButton.click();
+      }
+    }
+  }, []);
+
+  const createGrid = () => {
+    const id = crypto.randomUUID()
+    const newGrid: CanvasItem = {
+      id,
+      type: 'grid',
+      name: 'New Grid',
+      position: {
+        x: menuPosition?.x || 100,
+        y: menuPosition?.y || 100
+      },
+      isNew: true,
+      columns: [
+        { field: 'column1', header: 'Column 1', type: 'string' },
+        { field: 'column2', header: 'Column 2', type: 'number' }
+      ],
+      rows: [
+        { column1: 'Row 1', column2: 1 },
+        { column1: 'Row 2', column2: 2 }
+      ]
+    }
+    
+    setItems(prev => [...prev, newGrid])
+    setMenuPosition(null)
+  }
+
   const deleteItem = useCallback((id: string) => {
     setItems(prevItems => {
       const itemToDelete = prevItems.find(item => item.id === id)
@@ -120,75 +353,177 @@ export function Canvas() {
     })
   }, [setItems])
 
+  const exportCanvasToJson = useCallback(() => {
+    // Create a simplified version of the items without position data and formulas
+    const simplifiedItems = items
+      .filter(item => item.type !== 'formula') // Exclude formula components
+      .map(item => {
+        const { position, ...itemWithoutPosition } = item
+        return itemWithoutPosition
+      })
+
+    // Create and download the JSON file
+    const dataStr = JSON.stringify(simplifiedItems, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `canvas-export.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }, [items])
+
+  const returnCanvasAsJson = useCallback(() => {
+    // Create a simplified version of the items without position data and formulas
+    const simplifiedItems = items
+      .filter(item => item.type !== 'formula') // Exclude formula components
+      .map(item => {
+        const { position, ...itemWithoutPosition } = item
+        return itemWithoutPosition
+      })
+
+    return simplifiedItems
+  }, [items])
+
+  const createGridFromJson = useCallback((jsonData: any) => {
+    const id = crypto.randomUUID()
+    const newGrid: CanvasItem = {
+      id,
+      type: 'grid',
+      name: jsonData.name || 'Imported Grid',
+      position: {
+        x: 100,  // Default position
+        y: 100
+      },
+      columns: jsonData.columns || [
+        { field: 'column1', header: 'Column 1', type: 'string' },
+        { field: 'column2', header: 'Column 2', type: 'number' }
+      ],
+      rows: jsonData.rows || [
+        { column1: 'Row 1', column2: 1 },
+        { column1: 'Row 2', column2: 2 }
+      ]
+    }
+    
+    setItems(prev => [...prev, newGrid])
+  }, [setItems])
+
   return (
     <ClientOnly>
-      <div 
-        ref={canvasRef}
-        className="w-full h-screen bg-slate-50 dark:bg-slate-900 relative select-none"
-        onClick={handleCanvasClick}
-      >
-        {visibleItems.length === 0 && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-muted-foreground space-y-2 pointer-events-none">
-            <div className="text-lg font-medium">Welcome to Formula Engine</div>
-            <div className="text-sm">Click anywhere on the canvas to create variables and formulas</div>
-            <div className="flex items-center gap-2 mt-4 text-xs">
-              <div className="flex items-center">
-                <LucideVariable className="mr-1 h-4 w-4" />
-                Variables
-              </div>
-              <div>•</div>
-              <div className="flex items-center">
-                <FunctionSquare className="mr-1 h-4 w-4" />
-                Formulas
+      <div className="flex">
+        <div className="fixed top-5 left-5 z-10">
+          <AIChatSidebar 
+            onJsonReceived={createGridFromJson} 
+            getCanvasData={returnCanvasAsJson}
+            functionMetadata={FormulaMetadata}
+            onCreateFormula={handleCreateFormulaFromLLM}
+          />
+        </div>
+        <div 
+          ref={canvasRef}
+          className="flex-1 h-screen bg-slate-50 dark:bg-slate-900 relative select-none"
+          onClick={handleCanvasClick}
+        >
+          {/* Export button - positioned in top-right corner */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="absolute top-4 right-4 z-10"
+            onClick={exportCanvasToJson}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Canvas
+          </Button>
+
+          {visibleItems.length === 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-muted-foreground space-y-2 pointer-events-none">
+              <div className="text-lg font-medium">Welcome to Formula Engine</div>
+              <div className="text-sm">Click anywhere on the canvas to create variables and formulas</div>
+              <div className="flex items-center gap-2 mt-4 text-xs">
+                <div className="flex items-center">
+                  <LucideVariable className="mr-1 h-4 w-4" />
+                  Variables
+                </div>
+                <div>•</div>
+                <div className="flex items-center">
+                  <FunctionSquare className="mr-1 h-4 w-4" />
+                  Formulas
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <Suspense fallback={null}>
-          {visibleItems.map(item => (
-            item.type === 'variable' ? (
-              <Variable
-                key={item.id}
-                item={item}
-                onPositionChange={(pos) => updateItemPosition(item.id, pos)}
-                onUpdate={(updates) => updateItem(item.id, updates)}
-                onDelete={() => deleteItem(item.id)}
-                onEditingEnd={handleEditingEnd}
-                isNew={item.isNew}
-              />
-            ) : (
-              <FormulaEngine
-                key={item.id}
-                item={item}
-                variables={allVariables}
-                onPositionChange={(pos) => updateItemPosition(item.id, pos)}
-                onUpdate={(updates) => updateItem(item.id, updates)}
-                onDelete={() => deleteItem(item.id)}
-                onEditingEnd={handleEditingEnd}
-              />
-            )
-          ))}
-        </Suspense>
+          <Suspense fallback={null}>
+            {visibleItems.map(item => {
+              switch (item.type) {
+                case 'variable':
+                  return (
+                    <Variable
+                      key={item.id}
+                      item={item}
+                      onPositionChange={(pos) => updateItemPosition(item.id, pos)}
+                      onUpdate={(updates) => updateItem(item.id, updates)}
+                      onDelete={() => deleteItem(item.id)}
+                      onEditingEnd={handleEditingEnd}
+                      isNew={item.isNew}
+                    />
+                  )
+                case 'formula':
+                  return (
+                    <FormulaEngine
+                      key={item.id}
+                      item={item}
+                      variables={allVariables}
+                      onPositionChange={(pos) => updateItemPosition(item.id, pos)}
+                      onUpdate={(updates) => updateItem(item.id, updates)}
+                      onDelete={() => deleteItem(item.id)}
+                      onEditingEnd={handleEditingEnd}
+                    />
+                  )
+                case 'grid':
+                  return (
+                    <DataGrid
+                      key={item.id}
+                      item={item}
+                      onPositionChange={(pos) => updateItemPosition(item.id, pos)}
+                      onUpdate={(updates) => updateItem(item.id, updates)}
+                      onDelete={() => deleteItem(item.id)}
+                      onEditingEnd={handleEditingEnd}
+                      onCreateVariable={(variable) => handleCreateVariable(item.id, variable)}
+                      isNew={item.isNew}
+                    />
+                  )
+                default:
+                  return null
+              }
+            })}
+          </Suspense>
 
-        {menuPosition && (
-          <DropdownMenu defaultOpen onOpenChange={handleMenuClose}>
-            <DropdownMenuTrigger asChild>
-              <div 
-                className="absolute w-1 h-1"
-                style={{ left: menuPosition.x, top: menuPosition.y }}
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={createVariable}>
-                <LucideVariable/> New Variable <PlusIcon className='ml-1'/>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={createFormula}>
-                <FunctionSquare/> New Formula <PlusIcon className='ml-1'/>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+          {menuPosition && (
+            <DropdownMenu defaultOpen onOpenChange={handleMenuClose}>
+              <DropdownMenuTrigger asChild>
+                <div 
+                  className="absolute w-1 h-1"
+                  style={{ left: menuPosition.x, top: menuPosition.y }}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={createVariable}>
+                  <LucideVariable className="mr-2"/> New Variable <PlusIcon className="ml-1"/>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={createFormula}>
+                  <FunctionSquare className="mr-2"/> New Formula <PlusIcon className="ml-1"/>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={createGrid}>
+                  <TableIcon className="mr-2"/> New Grid <PlusIcon className="ml-7"/>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
     </ClientOnly>
   )

@@ -49,42 +49,6 @@ export interface MultiplyRequestBody {
   num2: number;
 }
 
-// median(numbers: number[]): number
-// returns the median of an array of numbers
-// limited to an array of numbers
-// example: median([1, 2, 3]) => 2
-export interface MedianRequestBody {
-  function: 'median';
-  numbers: number[];
-}
-
-// mean(numbers: number[]): number
-// returns the mean of an array of numbers
-// limited to an array of numbers
-// example: mean([1, 2, 3]) => 2
-export interface MeanRequestBody {
-  function: 'mean';
-  numbers: number[];
-}
-
-// min(numbers: number[]): number
-// returns the minimum of an array of numbers
-// limited to an array of numbers
-// example: min([1, 2, 3]) => 1
-export interface MinRequestBody {
-  function: 'min',
-  numbers: number[]
-}
-
-// max(numbers: number[]): number
-// returns the maximum of an array of numbers
-// limited to an array of numbers
-// example: max([1, 2, 3]) => 3
-export interface MaxRequestBody {
-  function: 'max',
-  numbers: number[]
-}
-
 // round(number: number, precision?: number): number
 // returns the number rounded to the precision
 // limited to one number argument
@@ -126,37 +90,117 @@ export interface PowRequestBody {
 
 
 // Lists
+
+// median(numbers: number[]): number
+// returns the median of an array of numbers
+// limited to an array of numbers
+// example: median([1, 2, 3]) => 2
+export interface MedianRequestBody {
+  function: 'median';
+  numbers: number[];
+}
+
+// mean(numbers: number[]): number
+// returns the mean of an array of numbers
+// limited to an array of numbers
+// example: mean([1, 2, 3]) => 2
+export interface MeanRequestBody {
+  function: 'mean';
+  numbers: number[];
+}
+
+// min(numbers: number[]): number
+// returns the minimum of an array of numbers
+// limited to an array of numbers
+// example: min([1, 2, 3]) => 1
+export interface MinRequestBody {
+  function: 'min',
+  numbers: number[]
+}
+
+// max(numbers: number[]): number
+// returns the maximum of an array of numbers
+// limited to an array of numbers
+// example: max([1, 2, 3]) => 3
+export interface MaxRequestBody {
+  function: 'max',
+  numbers: number[]
+}
+
+//sum(numbers: T[]): T
+//returns the sum of the list elements
+//limited to one list argument
+//example: sum([1, 2, 3]) => 6
+export interface SumRequestBody<T> {
+  function: 'sum';
+  numbers: number[];
+}
+
+//list(items: T[]): T[]
+//returns the list of items
+//limited to one list argument
+//example: list([1, 2, 3]) => [1, 2, 3]
 export interface ListRequestBody<T> {
   function: 'list';
   items: T[];
 }
+
+//at(items: T[], index: number): T
+//returns the item at the index
+//limited to two arguments
+//example: at([1, 2, 3], 1) => 2
 export interface AtRequestBody<T> {
   function: 'at';
   items: T[];
   index: number;
 }
+
+//first(items: T[]): T
+//returns the first item in the list
+//limited to one list argument
+//example: first([1, 2, 3]) => 1
 export interface FirstRequestBody<T> {
   function: 'first';
   items: T[];
-  index: number;
 }
+
+//last(items: T[]): T
+//returns the last item in the list
+//limited to one list argument
+//example: last([1, 2, 3]) => 3
 export interface LastRequestBody<T> {
   function: 'last';
   items: T[];
 }
+
+//sort(items: T[]): T[]
+//returns the list sorted in ascending order
+//limited to one list argument
+//example: sort([3, 1, 2]) => [1, 2, 3]
 export interface SortRequestBody<T> {
   function: 'sort';
   items: T[];
 }
+
+//reverse(items: T[]): T[]
+//returns the list reversed
+//limited to one list argument
+//example: reverse([1, 2, 3]) => [3, 2, 1]
 export interface ReverseRequestBody<T> {
   function: 'reverse';
   items: T[];
 }
+
 export interface SomeRequestBody<T> {
   function: 'some';
   items: T[];
   predicate: (item: T) => boolean;
 }
+
+//concat(lists: T[][]): T[]
+//returns the list of lists concatenated
+//limited to one list of lists argument
+//example: concat([[1, 2], [3, 4]]) => [1, 2, 3, 4]
 export interface ConcatRequestBody<T> {
   function: 'concat';
   lists: T[][];
@@ -164,6 +208,11 @@ export interface ConcatRequestBody<T> {
 
 
 //String funcitons
+
+//substring(str: string, start: number, end?: number): string
+//returns the substring of a string
+//limited to one string argument
+//example: substring("hello", 1, 3) => "el"
 export interface SubstringRequestBody {
   function: 'substring';
   str: string;
@@ -171,6 +220,10 @@ export interface SubstringRequestBody {
   end?: number;
 }
 
+//replace(str: string, text: string, replace: string): string
+//returns the string with the text replaced with the replace string
+//limited to three string arguments
+//example: replace("hello", "e", "a") => "hallo"
 export interface ReplaceRequestBody {
   function: 'replace';
   str: string;
@@ -178,6 +231,10 @@ export interface ReplaceRequestBody {
   replace: string;
 }
 
+//replaceAll(str: string, text: string, replace: string): string
+//returns the string with all instances of the text replaced with the replace string
+//limited to three string arguments
+//example: replaceAll("hello", "l", "a") => "heaao"
 export interface ReplaceAllRequestBody {
   function: 'replaceAll';
   str: string;
@@ -185,22 +242,38 @@ export interface ReplaceAllRequestBody {
   replace: string;
 }
 
+//lower(str: string): string
+//returns the string in lowercase
+//limited to one string argument
+//example: lower("Hello") => "hello"
 export interface LowerRequestBody {
   function: 'lower';
   str: string;
 }
 
+//upper(str: string): string
+//returns the string in uppercase
+//limited to one string argument
+//example: upper("hello") => "HELLO"
 export interface UpperRequestBody {
   function: 'upper';
   str: string;
 }
 
+//repeat(str: string, count: number): string
+//returns the string repeated count times
+//limited to two string arguments
+//example: repeat("hello", 3) => "hellohellohello"
 export interface RepeatRequestBody {
   function: 'repeat';
   str: string;
   count: number;
 }
 
+//padStart(str: string, length: number, text: string): string
+//returns the string padded with the text to the left
+//limited to three string arguments
+//example: padStart("hello", 10, " ") => "     hello"
 export interface PadStartRequestBody {
   function: 'padStart';
   str: string;
@@ -208,6 +281,10 @@ export interface PadStartRequestBody {
   text: string;
 }
 
+//padEnd(str: string, length: number, text: string): string
+//returns the string padded with the text to the right
+//limited to three string arguments
+//example: padEnd("hello", 10, " ") => "hello     "
 export interface PadEndRequestBody {
   function: 'padEnd';
   str: string;
@@ -215,11 +292,19 @@ export interface PadEndRequestBody {
   text: string;
 }
 
+//format(value: any): string
+//returns the value formatted as a string
+//limited to one value argument
+//example: format(1234567890) => "1234567890"
 export interface FormatRequestBody {
   function: 'format';
   value: any;
 }
 
+//formatDate(date: Date, format: string, timezone?: string): string
+//returns the date formatted as a string
+//limited to three string arguments
+//example: formatDate(new Date(), "yyyy-MM-dd") => "2024-01-01"
 export interface FormatDateRequestBody {
   function: 'formatDate';
   date: Date;
@@ -227,6 +312,10 @@ export interface FormatDateRequestBody {
   timezone?: string;
 }
 
+//join(list: any[], separator: string): string
+//returns the list joined by the separator
+//limited to two string arguments
+//example: join(["hello", "world"], " ") => "hello world"
 export interface JoinRequestBody {
   function: 'join';
   list: any[];
@@ -261,6 +350,10 @@ function isMeanRequestBody(reqBody: FunctionRequestBody): reqBody is MeanRequest
   return reqBody.function === 'mean' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number');
 }
 
+function isSumRequestBody<T>(reqBody: FunctionRequestBody): reqBody is SumRequestBody<T> {
+  return reqBody.function === 'sum' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number');
+}
+
 function isMinRequestBody(reqBody: FunctionRequestBody): reqBody is MinRequestBody {
   return reqBody.function === 'min' && Array.isArray(reqBody.numbers) && reqBody.numbers.every(num => typeof num === 'number')
 }
@@ -293,10 +386,10 @@ function isAtRequestBody<T>(reqBody: FunctionRequestBody): reqBody is AtRequestB
 }
 
 function isFirstRequestBody<T>(reqBody: FunctionRequestBody): reqBody is FirstRequestBody<T> {
-  return reqBody.function === 'first' && Array.isArray(reqBody.items) && typeof reqBody.index === 'number';
+  return reqBody.function === 'first' && Array.isArray(reqBody.items);
 }
 function isLastRequestBody<T>(reqBody: FunctionRequestBody): reqBody is LastRequestBody<T> {
-  return reqBody.function === 'last' && Array.isArray(reqBody.items)
+  return reqBody.function === 'last' && Array.isArray(reqBody.items);
 }
 function isSortRequestBody<T>(reqBody: FunctionRequestBody): reqBody is SortRequestBody<T> {
   return reqBody.function === 'sort' && Array.isArray(reqBody.items);
@@ -378,6 +471,10 @@ const divide: FunctionHandler<DivideRequestBody> = (reqBody) => {
   return reqBody.num1 / reqBody.num2;
 }
 
+const sum: FunctionHandler<SumRequestBody<any>> = (reqBody) => {
+  return reqBody.numbers.reduce((acc, num) => acc + num, 0);
+}
+
 const median: FunctionHandler<MedianRequestBody> = (reqBody) => {
   const sortedNumbers = reqBody.numbers.slice().sort((a, b) => a - b);
   const mid = Math.floor(sortedNumbers.length / 2);
@@ -457,47 +554,47 @@ const concat: FunctionHandler<ConcatRequestBody<any>> = (reqBody) => {
 
 //String functions
 const substring: FunctionHandler<SubstringRequestBody> = (reqBody) => {
-  return reqBody.str.substring(reqBody.start, reqBody.end);
+  return { result: reqBody.str.substring(reqBody.start, reqBody.end) };
 }
 
 const replace: FunctionHandler<ReplaceRequestBody> = (reqBody) => {
-  return reqBody.str.replace(reqBody.text, reqBody.replace);
+  return { result: reqBody.str.replace(reqBody.text, reqBody.replace) };
 }
 
 const replaceAll: FunctionHandler<ReplaceAllRequestBody> = (reqBody) => {
-  return reqBody.str.replaceAll(reqBody.text, reqBody.replace);
+  return { result: reqBody.str.replaceAll(reqBody.text, reqBody.replace) };
 }
 
 const lower: FunctionHandler<LowerRequestBody> = (reqBody) => {
-  return reqBody.str.toLowerCase();
+  return { result: reqBody.str.toLowerCase() };
 }
 
 const upper: FunctionHandler<UpperRequestBody> = (reqBody) => {
-  return reqBody.str.toUpperCase();
+  return { result: reqBody.str.toUpperCase() };
 }
 
 const repeat: FunctionHandler<RepeatRequestBody> = (reqBody) => {
-  return reqBody.str.repeat(reqBody.count);
+  return { result: reqBody.str.repeat(reqBody.count) };
 }
 
 const padStart: FunctionHandler<PadStartRequestBody> = (reqBody) => {
-  return reqBody.str.padStart(reqBody.length, reqBody.text);
+  return { result: reqBody.str.padStart(reqBody.length, reqBody.text) };
 }
 
 const padEnd: FunctionHandler<PadEndRequestBody> = (reqBody) => {
-  return reqBody.str.padEnd(reqBody.length, reqBody.text);
+  return { result: reqBody.str.padEnd(reqBody.length, reqBody.text) };
 }
 
 const format: FunctionHandler<FormatRequestBody> = (reqBody) => {
-  return reqBody.value.toString();
+  return { result: reqBody.value.toString() };
 }
 
 const formatDate: FunctionHandler<FormatDateRequestBody> = (reqBody) => {
-  return DateTime.fromJSDate(reqBody.date).setZone(reqBody.timezone).toFormat(reqBody.format);
+  return { result: DateTime.fromJSDate(reqBody.date).setZone(reqBody.timezone).toFormat(reqBody.format) };
 }
 
 const join: FunctionHandler<JoinRequestBody> = (reqBody) => {
-  return reqBody.list.join(reqBody.separator);
+  return { result: reqBody.list.join(reqBody.separator) };
 }
 
 
@@ -534,6 +631,7 @@ const functionMap: Record<string, FunctionHandler<any>> = {
   format,
   formatDate,
   join,
+  sum,
 };
 
 
@@ -553,6 +651,8 @@ export const dispatch = (reqBody: FunctionRequestBody) => {
     } else if (isDivideRequestBody(reqBody)) {
       return { result: handler(reqBody) };
     } else if (isMultiplyRequestBody(reqBody)) {
+      return { result: handler(reqBody) };
+    } else if (isSumRequestBody(reqBody)) {
       return { result: handler(reqBody) };
     } else if (isMedianRequestBody(reqBody)) {
       return { result: handler(reqBody) };
