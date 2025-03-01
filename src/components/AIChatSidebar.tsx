@@ -21,25 +21,13 @@ interface AIChatSidebarProps {
   onCreateFormula: (formula: string, variables: string[]) => void
 }
 
-export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata, onCreateFormula }: AIChatSidebarProps) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+// Compact system prompt to reduce token usage
+const SYSTEM_PROMPT = `You are a helpful AI assistant that can:
 
-  // Auto scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  const systemPrompt = `You are a helpful AI assistant that can perform two types of tasks:
-
-1. Generate example data in JSON format. When users ask for data, respond with valid JSON that follows this exact structure, wrapped in code blocks:
-
+1. Generate example data in JSON format:
 \`\`\`json
 {
-  "name": "Descriptive Grid Name",
+  "name": "Grid Name",
   "columns": [
     { "field": "fieldName", "header": "Header Name", "type": "string|number" }
   ],
@@ -49,21 +37,27 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
 }
 \`\`\`
 
-2. Help with calculations using canvas data. When users ask for calculations, analyze the canvas data to determine which variables are relevant, and suggest formulas using the available functions. 
-
-For calculations, ALWAYS wrap your formula in a formula code block like this:
-
+2. Create formulas using canvas data. Always wrap formulas in code blocks. Only return the final version of the formula:
 \`\`\`formula
 @function #variable1 #variable2
 \`\`\`
 
-Your response should include:
-- A clear explanation of what the formula does
-- The formula itself in a code block as shown above
-- Use the @function syntax with # to reference variables, like: @add #var1 #var2
+For formulas:
+- Explain what the formula does
+- Include the formula in a code block
+- Use @function with # for variables
+- Include actual values in the final formula, not just variable names`
 
-IMPORTANT: Always wrap formulas in \`\`\`formula code blocks. This is required for the system to process them correctly.
-`
+export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata, onCreateFormula }: AIChatSidebarProps) {
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Auto scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const toggleMessageCollapse = (index: number) => {
     setMessages(prev => prev.map((msg, i) => 
@@ -72,10 +66,13 @@ IMPORTANT: Always wrap formulas in \`\`\`formula code blocks. This is required f
   }
 
   const renderMessage = (message: Message, index: number) => {
-    // Check if the message contains JSON (has ```json code block)
+    // Check if the message contains JSON or formula
     const isJson = message.content.includes('```json')
-    // Only collapse JSON responses from the assistant
-    const shouldCollapse = isJson && message.role === 'assistant'
+    const isFormula = message.content.includes('```formula')
+    // Only collapse JSON or formula responses from the assistant
+    const shouldCollapse = (isJson || isFormula) && message.role === 'assistant'
+    // Determine the label based on content type
+    const contentLabel = isFormula ? "Formula Response" : isJson ? "JSON Response" : ""
     
     return (
       <div
@@ -96,24 +93,24 @@ IMPORTANT: Always wrap formulas in \`\`\`formula code blocks. This is required f
         >
           {shouldCollapse && (
             <div className="flex items-center justify-between mb-1 text-xs text-muted-foreground">
-              <span>JSON Response</span>
+              <span>{contentLabel}</span>
               {message.isCollapsed ? (
-                <ChevronDown className="h-3 w-3 ml-2 transition-transform duration-1000" />
+                <ChevronDown className="h-3 w-3 ml-2" />
               ) : (
-                <ChevronUp className="h-3 w-3 ml-2 transition-transform duration-1000" />
+                <ChevronUp className="h-3 w-3 ml-2" />
               )}
             </div>
           )}
           
           <div 
             className={cn(
-              shouldCollapse ? "overflow-hidden transition-all duration-1000 ease-in-out" : "",
+              shouldCollapse ? "overflow-hidden transition-all duration-500 ease-in-out" : "",
               message.isCollapsed && shouldCollapse ? "max-h-6" : "max-h-[1000px]"
             )}
           >
             {message.isCollapsed && shouldCollapse ? (
               <div className="text-sm font-sans opacity-70">
-                {'{...}'} Click to expand
+                {isJson ? '{...}' : '{...}'} Click to expand
               </div>
             ) : (
               <pre className="whitespace-pre-wrap text-sm font-sans">
@@ -124,6 +121,38 @@ IMPORTANT: Always wrap formulas in \`\`\`formula code blocks. This is required f
         </div>
       </div>
     )
+  }
+
+  const extractJsonAndFormula = (text: string) => {
+    // Try to extract JSON
+    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || 
+                     text.match(/{[\s\S]*}/)
+    
+    if (jsonMatch) {
+      try {
+        const jsonString = jsonMatch[1] || jsonMatch[0]
+        const jsonData = JSON.parse(jsonString)
+        onJsonReceived(jsonData)
+      } catch (e) {
+        console.error('Failed to parse JSON:', e)
+      }
+    }
+    
+    // Try to extract formula
+    const formulaMatch = text.match(/```formula\n([\s\S]*?)\n```/) || 
+                        text.match(/@([a-zA-Z0-9_]+)(\s+#[a-zA-Z0-9_]+)+/g)?.map(m => [m, m])[0]
+    
+    if (formulaMatch && onCreateFormula) {
+      const formulaString = formulaMatch[1] || formulaMatch[0]
+      
+      // Extract variable names (anything that starts with #)
+      const variables = Array.from(
+        formulaString.matchAll(/#([a-zA-Z0-9_]+)/g), 
+        match => match[1]
+      )
+      
+      onCreateFormula(formulaString.trim(), variables)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,12 +168,16 @@ IMPORTANT: Always wrap formulas in \`\`\`formula code blocks. This is required f
       // Get current canvas data for calculation requests
       const canvasData = getCanvasData()
       
+      // Since we're sending function metadata and canvas data with every request,
+      // we don't need to send conversation history - just the current user message
+      // This significantly reduces token usage and prevents exponential growth
+      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [...messages, userMessage],
-          systemPrompt,
+          messages: [userMessage], // Only send the current message
+          systemPrompt: SYSTEM_PROMPT,
           canvasData,
           functionMetadata
         })
@@ -162,85 +195,40 @@ IMPORTANT: Always wrap formulas in \`\`\`formula code blocks. This is required f
         
         // Convert the chunk to text
         const chunk = new TextDecoder().decode(value)
-        console.log('Received chunk:', chunk)
         assistantMessage += chunk
 
-        // Update the messages with the current chunk - don't collapse while streaming
+        // Update the messages with the current chunk
         setMessages(prev => {
           const newMessages = [...prev]
           const lastMessage = newMessages[newMessages.length - 1]
           if (lastMessage?.role === 'assistant') {
             lastMessage.content = assistantMessage
-            lastMessage.isCollapsed = false // Keep expanded while streaming
+            lastMessage.isCollapsed = false
             return [...newMessages]
           } else {
             return [...newMessages, { 
               role: 'assistant', 
               content: assistantMessage,
-              isCollapsed: false // Keep expanded while streaming
+              isCollapsed: false
             }]
           }
         })
       }
 
-      // Stream is complete - now we can collapse the message if it's JSON
+      // Stream is complete - now we can collapse the message if it's JSON or formula
       setMessages(prev => {
         const newMessages = [...prev]
         const lastMessage = newMessages[newMessages.length - 1]
         if (lastMessage?.role === 'assistant') {
-          // Only collapse JSON responses
-          lastMessage.isCollapsed = lastMessage.content.includes('```json')
+          lastMessage.isCollapsed = lastMessage.content.includes('```json') || 
+                                   lastMessage.content.includes('```formula')
         }
         return newMessages
       })
 
-      // Try to extract JSON from the complete response
-      try {
-        const jsonMatch = assistantMessage.match(/```json\n([\s\S]*?)\n```/) || 
-                         assistantMessage.match(/{[\s\S]*}/)
-        
-        if (jsonMatch) {
-          const jsonString = jsonMatch[1] || jsonMatch[0]
-          const jsonData = JSON.parse(jsonString)
-          onJsonReceived(jsonData)
-        }
-        
-        // Try to extract formula from the complete response
-        // First, try to find a formula in a code block
-        let formulaMatch = assistantMessage.match(/```formula\n([\s\S]*?)\n```/)
-        
-        // If no formula code block is found, try to find a formula pattern directly
-        if (!formulaMatch) {
-          // Look for @function patterns with # variables
-          const formulaPattern = /@([a-zA-Z0-9_]+)(\s+#[a-zA-Z0-9_]+)+/g
-          const matches = [...assistantMessage.matchAll(formulaPattern)]
-          
-          if (matches.length > 0) {
-            // Create a RegExpMatchArray-like object with the formula
-            const formula = matches[0][0].trim()
-            formulaMatch = [formula, formula] as RegExpMatchArray
-            console.log("Found formula without code block:", formula)
-          }
-        }
-        
-        if (formulaMatch && onCreateFormula) {
-          const formulaString = formulaMatch[1].trim()
-          
-          // Extract variable names from the formula (anything that starts with #)
-          const variableRegex = /#([a-zA-Z0-9_]+)/g
-          const variables: string[] = []
-          let match
-          
-          while ((match = variableRegex.exec(formulaString)) !== null) {
-            variables.push(match[1])
-          }
-          
-          // Call the handler to create the formula
-          onCreateFormula(formulaString, variables)
-        }
-      } catch (e) {
-        console.error('Failed to parse response:', e)
-      }
+      // Process the complete response
+      extractJsonAndFormula(assistantMessage)
+      
     } catch (error) {
       console.error('Error:', error)
       setMessages(prev => [...prev, {

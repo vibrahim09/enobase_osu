@@ -5,13 +5,13 @@ const openai = new OpenAI({
 })
 
 export async function OpenAIStream(payload: {
-  model: string
+  model?: string
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[]
   temperature?: number
   max_tokens?: number
 }) {
   const response = await openai.chat.completions.create({
-    model: payload.model,
+    model: payload.model ?? 'gpt-4o-mini',
     messages: payload.messages,
     temperature: payload.temperature ?? 0.7,
     max_tokens: payload.max_tokens,

@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     }
 
     const response = await OpenAIStream({
-      model: 'gpt-4',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: enhancedSystemPrompt },
         ...messages

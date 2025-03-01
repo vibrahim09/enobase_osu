@@ -126,112 +126,21 @@ export function Canvas() {
     setItems(prev => [...prev, newVariable])
   }, [setItems])
 
+  // Helper function to trigger calculation on a formula
+  const calculateResult = useCallback((formulaId: string) => {
+    // Find the calculate button in the formula component and click it
+    const formulaElement = document.querySelector(`[data-id="${formulaId}"]`);
+    if (formulaElement) {
+      const calculateButton = formulaElement.querySelector('button');
+      if (calculateButton && calculateButton instanceof HTMLButtonElement) {
+        calculateButton.click();
+      }
+    }
+  }, []);
+
   // New function to handle formula creation from LLM
   const handleCreateFormulaFromLLM = useCallback((formulaString: string, variableNames: string[]) => {
-    // Check if variables exist in the canvas
-    const existingVariables = items.filter(item => item.type === 'variable')
-    const missingVariables: string[] = []
-    
-    // Find which variables are missing
-    variableNames.forEach(varName => {
-      const exists = existingVariables.some(v => 
-        v.name.toLowerCase() === varName.toLowerCase()
-      )
-      if (!exists) {
-        missingVariables.push(varName)
-      }
-    })
-    
-    // Find grid columns that match missing variable names
-    const grids = items.filter(item => item.type === 'grid')
-    
-    missingVariables.forEach(varName => {
-      // Check each grid for a matching column
-      for (const grid of grids) {
-        if (!grid.columns) continue
-        
-        const matchingColumn = grid.columns.find(col => 
-          col.header.toLowerCase() === varName.toLowerCase() || 
-          col.field.toLowerCase() === varName.toLowerCase()
-        )
-        
-        if (matchingColumn) {
-          // Extract values from the grid
-          const values = grid.rows?.map(row => {
-            // Ensure numeric values are properly parsed as numbers
-            if (matchingColumn.type === 'number') {
-              const val = row[matchingColumn.field];
-              return typeof val === 'number' ? val : parseFloat(String(val));
-            }
-            return row[matchingColumn.field];
-          }) || [];
-          
-          // Use handleCreateVariable to create the variable from the grid column
-          handleCreateVariable(grid.id, {
-            type: 'variable',
-            name: matchingColumn.header || matchingColumn.field,
-            // Always set variableType to "list" for grid columns since they contain multiple values
-            variableType: "list",
-            // Pass the properly processed values
-            value: values,
-            position: {
-              x: 500,  // Random position
-              y: 500
-            }
-          })
-          
-          // Replace the variable name in the formula with the actual values
-          // Format the values appropriately for the formula
-          let formattedValues;
-          if (matchingColumn.type === 'number') {
-            formattedValues = `[${values.join(', ')}]`;
-          } else {
-            // For strings, wrap each value in quotes
-            formattedValues = `[${values.map(v => `"${v}"`).join(', ')}]`;
-          }
-          
-          // Replace the variable reference with the actual values
-          formulaString = formulaString.replace(
-            new RegExp(`#${varName}\\b`, 'gi'), 
-            `#${formattedValues}`
-          );
-          
-          break // Found a match, no need to check other grids
-        }
-      }
-    })
-    
-    // For existing variables, also replace their names with values in the formula
-    existingVariables.forEach(variable => {
-      const varNamePattern = new RegExp(`#${variable.name}\\b`, 'gi');
-      
-      if (formulaString.match(varNamePattern)) {
-        // Format the value appropriately based on its type
-        let formattedValue;
-        
-        if (Array.isArray(variable.value)) {
-          if (variable.variableType === 'list' && variable.value.every(v => typeof v === 'number')) {
-            // Numeric list
-            formattedValue = `[${variable.value.join(', ')}]`;
-          } else {
-            // String list or mixed list
-            formattedValue = `[${variable.value.map(v => 
-              typeof v === 'string' ? `"${v}"` : v
-            ).join(', ')}]`;
-          }
-        } else if (typeof variable.value === 'string') {
-          formattedValue = `"${variable.value}"`;
-        } else {
-          // Number or other type
-          formattedValue = variable.value;
-        }
-        
-        // Replace the variable reference with the actual value
-        formulaString = formulaString.replace(varNamePattern, `#${formattedValue}`);
-      }
-    });
-    
-    // Create the formula component
+    // Create the formula component with a fixed position
     const newFormula: CanvasItem = {
       id: `formula-${Date.now()}`,
       type: 'formula',
@@ -247,12 +156,6 @@ export function Canvas() {
     
     // We need to wait for the formula to be created before setting its value
     setTimeout(() => {
-      // Instead of manipulating the DOM directly, use the updateItem function
-      // to update the formula's internal state through React
-      
-      // First, find the formula component we just created
-      const formulaId = newFormula.id;
-      
       // Implement typewriter effect using React state updates
       let currentIndex = 0;
       const typingSpeed = 50; // milliseconds per character
@@ -263,8 +166,7 @@ export function Canvas() {
           const partialFormula = formulaString.substring(0, currentIndex);
           
           // Update the formula component with the partial text
-          // This uses the component's internal formula state
-          updateItem(formulaId, { 
+          updateItem(newFormula.id, { 
             formula: partialFormula 
           });
           
@@ -279,7 +181,7 @@ export function Canvas() {
             console.log("Typing complete, setting final formula:", formulaString);
             
             // First, set the complete formula without triggering calculation
-            updateItem(formulaId, { 
+            updateItem(newFormula.id, { 
               formula: formulaString
             });
             
@@ -290,8 +192,8 @@ export function Canvas() {
               // Now trigger the calculation after a delay
               setTimeout(() => {
                 console.log("Triggering calculation now");
-                calculateResult(formulaId);
-              }, 500); // 500ms delay before calculation
+                calculateResult(newFormula.id);
+              }, 1000); // 1 second delay before calculation
             }, 500); // 500ms delay after setting formula
           }
         }
@@ -301,19 +203,7 @@ export function Canvas() {
       setTimeout(typeNextChar, 500);
     }, 500);
     
-  }, [items, setItems, updateItem, handleCreateVariable])
-
-  // Helper function to trigger calculation on a formula
-  const calculateResult = useCallback((formulaId: string) => {
-    // Find the calculate button in the formula component and click it
-    const formulaElement = document.querySelector(`[data-id="${formulaId}"]`);
-    if (formulaElement) {
-      const calculateButton = formulaElement.querySelector('button');
-      if (calculateButton && calculateButton instanceof HTMLButtonElement) {
-        calculateButton.click();
-      }
-    }
-  }, []);
+  }, [setItems, updateItem, calculateResult])
 
   const createGrid = () => {
     const id = crypto.randomUUID()
