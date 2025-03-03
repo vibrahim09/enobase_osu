@@ -21,10 +21,10 @@ interface VariableProps {
 
 const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, isNew = false }: VariableProps) => {
   const [isEditing, setIsEditing] = useState(isNew)
+  const [hasSetType, setHasSetType] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const valueInputRef = useRef<HTMLInputElement>(null)
-  const typeSelectRef = useRef<HTMLSelectElement>(null)
   const [editingValue, setEditingValue] = useState<string>('')
 
   const types = ['number', 'list', 'string', 'date'] as const
@@ -41,6 +41,13 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
       setEditingValue(`[${item.value.join(', ')}]`)
     }
   }, [isEditing, item.value, item.variableType])
+
+  // Set hasSetType when variableType changes
+  useEffect(() => {
+    if (item.variableType) {
+      setHasSetType(true)
+    }
+  }, [item.variableType])
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!isEditing) {
@@ -97,8 +104,7 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
       relatedTarget !== nameInputRef.current && 
       relatedTarget !== valueInputRef.current &&
       !relatedTarget?.closest('[role="listbox"]') &&
-      !relatedTarget?.closest('[role="combobox"]') &&
-      item.variableType
+      !relatedTarget?.closest('[role="combobox"]')
     ) {
       setIsEditing(false)
       onEditingEnd()
@@ -108,8 +114,12 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
     }
   }
 
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onUpdate({ variableType: e.target.value as typeof types[number] })
+  const handleTypeChange = (value: string) => {
+    onUpdate({ variableType: value as typeof types[number] })
+    // Focus the value input after type selection
+    if (valueInputRef.current) {
+      valueInputRef.current.focus()
+    }
   }
 
   return (
@@ -148,8 +158,7 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
             />
             <Select
               value={item.variableType || ''}
-              onValueChange={(value) => handleTypeChange({ target: { value } } as any)}
-              onOpenChange={(open) => !open && handleBlur({} as any)}
+              onValueChange={handleTypeChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select type..." />
@@ -173,14 +182,17 @@ const Variable = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, is
               onBlur={handleValueBlur}
               onClick={(e) => e.stopPropagation()}
               placeholder={
+                !item.variableType ? "Select a type first" :
                 item.variableType === 'number' ? "Value: (e.g., 42.5)" :
                 item.variableType === 'list' ? "Value: (e.g., [1, abc, 3, def])" :
                 item.variableType === 'date' ? "Value: (e.g., 2024-01-01)" :
-                item.variableType === 'string' ? "Value: (e.g., 'Hello, world!')" :
-                "Select a type first"
+                "Value: (e.g., 'Hello, world!')"
               }
-              className="cursor-text select-text"
-              step="any"
+              className={cn(
+                "cursor-text select-text",
+                !item.variableType && "opacity-50 cursor-not-allowed"
+              )}
+              disabled={!item.variableType}
             />
           </>
         ) : (
