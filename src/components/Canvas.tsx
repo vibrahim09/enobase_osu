@@ -206,7 +206,7 @@ export function Canvas() {
   }, [setItems, updateItem, calculateResult])
 
   const createGrid = () => {
-    const id = crypto.randomUUID()
+    const id = `grid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const newGrid: CanvasItem = {
       id,
       type: 'grid',
@@ -279,7 +279,7 @@ export function Canvas() {
   }, [items])
 
   const createGridFromJson = useCallback((jsonData: any) => {
-    const id = crypto.randomUUID()
+    const id = `grid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const newGrid: CanvasItem = {
       id,
       type: 'grid',
