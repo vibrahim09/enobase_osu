@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { DateTime } from 'luxon';
-
 // Request body interfaces
 export interface FunctionRequestBody {
   function: string;
@@ -420,7 +419,6 @@ export interface FormatDateRequestBody {
   format: string;
   timezone?: string;
 }
-
 // Type of the handler functions
 type FunctionHandler<T> = (reqBody: T) => any;
 
