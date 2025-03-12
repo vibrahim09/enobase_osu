@@ -56,7 +56,10 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
-
+  html, body, #__next {
+    height: 100%;
+    width: 100%;
+  }
   body {
     @apply bg-background text-foreground font-sans;
   }
@@ -86,5 +89,14 @@
   .no-scrollbar {
       -ms-overflow-style: none;  /* IE and Edge */
       scrollbar-width: none;  /* Firefox */
+}
+.canvas-background {
+  background-image: url('/cool-background.png');
+  background-size: cover;
+  background-position: center;
+}
+.ai-chat-sidebar{
+  color: brown;
+
 }
 }

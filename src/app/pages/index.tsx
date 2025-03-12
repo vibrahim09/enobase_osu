@@ -1,5 +1,5 @@
 import React from 'react';
-import PieChart from '../../components/Piechart';
+import PieChart from '../../components/Graphs';
 
 
 const HomePage: React.FC = () => {

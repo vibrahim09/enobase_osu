@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { MessageSquare, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import Graphs from './Graphs'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -19,6 +20,9 @@ interface AIChatSidebarProps {
   getCanvasData: () => any
   functionMetadata: any
   onCreateFormula: (formula: string, variables: string[]) => void
+  lineData: any
+  barData: any
+  pieData: any
 }
 
 // Compact system prompt to reduce token usage
@@ -46,12 +50,28 @@ For formulas:
 - Explain what the formula does
 - Include the formula in a code block
 - Use @function with # for variables
-- Include actual values in the final formula, not just variable names`
+- Include actual values in the final formula, not just variable names
 
-export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata, onCreateFormula }: AIChatSidebarProps) {
+3. Generate visualizations using the data provided. Use the following tool:
+\`\`\`json
+{
+  "tools": [
+    {
+      "name": "react-chartjs-2",
+      "description": "A tool to generate visualizations using natural language instructions.",
+      "instructions": "Use the data provided to generate line, bar, and pie charts."
+    }
+  ],
+  "instructions": "Fetch data from the API endpoint '/api/database-api?table={table_name}' and use 'react-chartjs-2' to generate visualizations. Always ensure the JSON is properly formatted with double-quoted property names and includes 'names' and 'values' arrays."
+}
+\`\`\`
+`
+
+export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata, onCreateFormula, lineData, barData, pieData }: AIChatSidebarProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [chartData, setChartData] = useState<{ names: string[], values: number[] } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Auto scroll to bottom when new messages arrive
@@ -130,7 +150,8 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
     
     if (jsonMatch) {
       try {
-        const jsonString = jsonMatch[1] || jsonMatch[0]
+        let jsonString = jsonMatch[1] || jsonMatch[0]
+        jsonString = jsonString.replace(/'/g, '"');
         const jsonData = JSON.parse(jsonString)
         onJsonReceived(jsonData)
       } catch (e) {
@@ -152,6 +173,20 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
       )
       
       onCreateFormula(formulaString.trim(), variables)
+    }
+
+    // Try to extract chart instructions
+    const chartMatch = text.match(/```json\n([\s\S]*?)\n```/)
+    
+    if (chartMatch) {
+      try {
+        const chartString = chartMatch[1]
+        const chartData = JSON.parse(chartString)
+        console.log("Chart Data:", chartData)
+        setChartData(chartData)
+      } catch (e) {
+        console.error('Failed to parse chart data:', e)
+      }
     }
   }
 
@@ -179,7 +214,10 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
           messages: [userMessage], // Only send the current message
           systemPrompt: SYSTEM_PROMPT,
           canvasData,
-          functionMetadata
+          functionMetadata,
+          lineData,
+          barData,
+          pieData
         })
       })
 
@@ -276,6 +314,13 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
           </Button>
         </form>
       </div>
+
+      {chartData && (
+        <div className="p-4 border-t mt-auto">
+          <h2>Generated Charts</h2>
+          <Graphs names={chartData.names} values={chartData.values} />
+        </div>
+      )}
     </Card>
   )
-} 
+}

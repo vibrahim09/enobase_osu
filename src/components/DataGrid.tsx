@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { useState, useRef, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import Graphs from './Graphs'
 
 interface DataGridProps {
   item: CanvasItem
@@ -30,6 +31,8 @@ interface DataGridProps {
 const DataGrid = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, onCreateVariable, isNew }: DataGridProps) => {
   const [isEditing, setIsEditing] = useState(isNew)
   const [isEditingName, setIsEditingName] = useState(isNew)
+  const [showGraphs, setShowGraphs] = useState(false)
+  const [selectedColumn, setSelectedColumn] = useState<string | null>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const { position, startDrag } = useDrag({
@@ -147,6 +150,69 @@ const DataGrid = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, on
     e.target.value = ''
   }
 
+  const handleJsonUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const jsondata = JSON.parse(event.target?.result as string)
+        if (!Array.isArray(jsondata) || jsondata.length === 0|| typeof jsondata[0] !== 'object') {
+          throw new Error('Invalid JSON data')
+        }
+        const newColumns = Object.keys(jsondata[0]).map((key, index) => ({
+          field: `column${index + 1}`,
+          header: key,
+          type: typeof jsondata[0][key] === 'number' ? 'number' : 'string'
+
+        }))
+        const newRows = jsondata.map((row: any) => {
+          const rowData: Record<string, any> = {}
+          Object.keys(row).forEach((key, index) => {
+            const column = newColumns[index]
+            if(column){
+            rowData[column.field] = column.type === 'number' ? 
+              (row[key] === '' ? 0 : Number(row[key])) : 
+              row[key]
+            }
+          })
+          return rowData
+        })
+          onUpdate({
+            name: file.name.replace(/\.[^/.]+$/, ''),
+            columns: newColumns,
+            rows: newRows
+          })
+          saveDataToDatabase(file.name.replace(/\.[^/.]+$/, ''), newColumns, newRows)
+        } catch (error) {
+          console.error('Error parsing JSON:', error)
+
+
+        }
+      }
+        reader.readAsText(file)
+        e.target.value = ''
+      }
+      const saveDataToDatabase =  async (name: string, columns: any[], rows: any[]) => {
+        try {
+          const response = await fetch('/api/another-api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name,
+              columns,
+              rows
+            })
+          })
+          if (!response.ok) {throw new Error('Failed to save data to database')
+        } console.log('Data saved to database')
+      } catch (error) {
+        console.error('Failed to save data to database:', error)
+      }
+    }
+
+  
+
   const handleCreateColumnVariable = (column: { field: string, header: string, type: string }) => {
     if (!onCreateVariable) return
 
@@ -239,7 +305,21 @@ const DataGrid = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, on
               <Upload className="h-4 w-4 mr-1" />
               Import CSV
             </label>
-            
+
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleJsonUpload}
+              className="hidden"
+              id={`json-upload-${item.id}`}
+            />
+            <label
+              htmlFor={`json-upload-${item.id}`}
+              className="flex items-center px-2 py-1 text-sm bg-secondary hover:bg-secondary/80 rounded-md cursor-pointer"
+              >
+              <Upload className="h-4 w-4 mr-1" />
+              Import JSON
+              </label>
             <XIcon 
               className="h-6 w-6 rounded-full hover:cursor-pointer hover:bg-slate-100 p-1"
               onClick={(e) => {
@@ -258,6 +338,7 @@ const DataGrid = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, on
                   <TableHead 
                     key={column.field}
                     className="group"
+                    onClick={() => setSelectedColumn(column.field)}
                   >
                     <div className="flex items-center gap-2">
                       <span>{column.header}</span>
@@ -313,6 +394,7 @@ const DataGrid = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, on
             <Plus className="h-4 w-4 mr-1" />
             Add Row
           </Button>
+
         </div>
       </CardContent>
     </Card>
