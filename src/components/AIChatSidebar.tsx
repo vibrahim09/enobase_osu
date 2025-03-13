@@ -20,9 +20,19 @@ interface AIChatSidebarProps {
   getCanvasData: () => any
   functionMetadata: any
   onCreateFormula: (formula: string, variables: string[]) => void
-  lineData: any
-  barData: any
-  pieData: any
+  onCreateChart: (chartData: {
+    type: 'line' | 'bar' | 'pie'
+    name: string
+    data: { 
+      names: string[], 
+      datasets: Array<{
+        label: string
+        values: number[]
+        backgroundColor?: string
+        borderColor?: string
+      }>
+    }
+  }) => void
 }
 
 // Compact system prompt to reduce token usage
@@ -52,26 +62,45 @@ For formulas:
 - Use @function with # for variables
 - Include actual values in the final formula, not just variable names
 
-3. Generate visualizations using the data provided. Use the following tool:
+3. Generate visualizations using the data provided. Use the following format:
 \`\`\`json
 {
-  "tools": [
+  "labels": ["Category 1", "Category 2", "Category 3"],
+  "datasets": [
     {
-      "name": "react-chartjs-2",
-      "description": "A tool to generate visualizations using natural language instructions.",
-      "instructions": "Use the data provided to generate line, bar, and pie charts."
+      "label": "Dataset 1",
+      "data": [10, 20, 30],
+      "backgroundColor": "rgba(75, 192, 192, 0.6)",
+      "borderColor": "rgba(75, 192, 192, 1)"
+    },
+    {
+      "label": "Dataset 2",
+      "data": [15, 25, 35],
+      "backgroundColor": "rgba(153, 102, 255, 0.6)",
+      "borderColor": "rgba(153, 102, 255, 1)"
     }
-  ],
-  "instructions": "Fetch data from the API endpoint '/api/database-api?table={table_name}' and use 'react-chartjs-2' to generate visualizations. Always ensure the JSON is properly formatted with double-quoted property names and includes 'names' and 'values' arrays."
+  ]
 }
 \`\`\`
+
+For charts:
+- You can create bar, line, or pie charts
+- For comparing multiple series, include multiple datasets with different labels
+- For a single dataset, the system will automatically use different colors for each data point
+- The user can switch between chart types after creation
+- Always ensure JSON is properly formatted with double-quoted property names
 `
 
-export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata, onCreateFormula, lineData, barData, pieData }: AIChatSidebarProps) {
+export function AIChatSidebar({ 
+  onJsonReceived, 
+  getCanvasData, 
+  functionMetadata, 
+  onCreateFormula,
+  onCreateChart 
+}: AIChatSidebarProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [chartData, setChartData] = useState<{ names: string[], values: number[] } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Auto scroll to bottom when new messages arrive
@@ -86,13 +115,20 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
   }
 
   const renderMessage = (message: Message, index: number) => {
-    // Check if the message contains JSON or formula
+    // Check if the message contains JSON, formula, or chart
     const isJson = message.content.includes('```json')
     const isFormula = message.content.includes('```formula')
-    // Only collapse JSON or formula responses from the assistant
-    const shouldCollapse = (isJson || isFormula) && message.role === 'assistant'
+    const isChart = message.content.includes('```chart') || 
+                   (message.content.includes('```json') && 
+                    message.content.includes('"labels"') && 
+                    message.content.includes('"datasets"'))
+    
+    // Only collapse JSON, formula, or chart responses from the assistant
+    const shouldCollapse = (isJson || isFormula || isChart) && message.role === 'assistant'
+    
     // Determine the label based on content type
-    const contentLabel = isFormula ? "Formula Response" : isJson ? "JSON Response" : ""
+    let contentLabel = isFormula ? "Formula Response" : isJson ? "JSON Response" : ""
+    if (isChart) contentLabel = "Chart Response"
     
     return (
       <div
@@ -130,7 +166,7 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
           >
             {message.isCollapsed && shouldCollapse ? (
               <div className="text-sm font-sans opacity-70">
-                {isJson ? '{...}' : '{...}'} Click to expand
+                {isChart ? 'Chart data {...}' : isJson ? '{...}' : '{...}'} Click to expand
               </div>
             ) : (
               <pre className="whitespace-pre-wrap text-sm font-sans">
@@ -153,7 +189,27 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
         let jsonString = jsonMatch[1] || jsonMatch[0]
         jsonString = jsonString.replace(/'/g, '"');
         const jsonData = JSON.parse(jsonString)
-        onJsonReceived(jsonData)
+        
+        // Check if this is a Chart.js format JSON
+        if (jsonData.labels && jsonData.datasets) {
+          // Convert Chart.js format to our internal format
+          onCreateChart({
+            type: 'bar', // Default to bar chart if not specified
+            name: jsonData.datasets[0]?.label || 'Chart',
+            data: {
+              names: jsonData.labels,
+              datasets: jsonData.datasets.map((dataset: any) => ({
+                label: dataset.label || 'Dataset',
+                values: dataset.data || [],
+                backgroundColor: dataset.backgroundColor,
+                borderColor: dataset.borderColor
+              }))
+            }
+          })
+        } else {
+          // Regular JSON data
+          onJsonReceived(jsonData)
+        }
       } catch (e) {
         console.error('Failed to parse JSON:', e)
       }
@@ -175,15 +231,22 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
       onCreateFormula(formulaString.trim(), variables)
     }
 
-    // Try to extract chart instructions
-    const chartMatch = text.match(/```json\n([\s\S]*?)\n```/)
-    
-    if (chartMatch) {
+    // Update chart extraction to create a canvas component
+    const chartMatch = text.match(/```chart\n([\s\S]*?)\n```/)
+    if (chartMatch && onCreateChart) {
       try {
-        const chartString = chartMatch[1]
-        const chartData = JSON.parse(chartString)
-        console.log("Chart Data:", chartData)
-        setChartData(chartData)
+        const chartData = JSON.parse(chartMatch[1])
+        onCreateChart({
+          type: chartData.type || 'bar',
+          name: chartData.name || 'Chart',
+          data: {
+            names: chartData.names || [],
+            datasets: chartData.datasets || [{
+              label: chartData.name || 'Dataset',
+              values: chartData.values || []
+            }]
+          }
+        })
       } catch (e) {
         console.error('Failed to parse chart data:', e)
       }
@@ -203,21 +266,14 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
       // Get current canvas data for calculation requests
       const canvasData = getCanvasData()
       
-      // Since we're sending function metadata and canvas data with every request,
-      // we don't need to send conversation history - just the current user message
-      // This significantly reduces token usage and prevents exponential growth
-      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [userMessage], // Only send the current message
+          messages: [userMessage],
           systemPrompt: SYSTEM_PROMPT,
           canvasData,
-          functionMetadata,
-          lineData,
-          barData,
-          pieData
+          functionMetadata
         })
       })
 
@@ -231,11 +287,9 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
         const { done, value } = await reader.read()
         if (done) break
         
-        // Convert the chunk to text
         const chunk = new TextDecoder().decode(value)
         assistantMessage += chunk
 
-        // Update the messages with the current chunk
         setMessages(prev => {
           const newMessages = [...prev]
           const lastMessage = newMessages[newMessages.length - 1]
@@ -253,13 +307,14 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
         })
       }
 
-      // Stream is complete - now we can collapse the message if it's JSON or formula
+      // Process the complete response
       setMessages(prev => {
         const newMessages = [...prev]
         const lastMessage = newMessages[newMessages.length - 1]
         if (lastMessage?.role === 'assistant') {
           lastMessage.isCollapsed = lastMessage.content.includes('```json') || 
-                                   lastMessage.content.includes('```formula')
+                                   lastMessage.content.includes('```formula') ||
+                                   lastMessage.content.includes('```chart')
         }
         return newMessages
       })
@@ -314,13 +369,6 @@ export function AIChatSidebar({ onJsonReceived, getCanvasData, functionMetadata,
           </Button>
         </form>
       </div>
-
-      {chartData && (
-        <div className="p-4 border-t mt-auto">
-          <h2>Generated Charts</h2>
-          <Graphs names={chartData.names} values={chartData.values} />
-        </div>
-      )}
     </Card>
   )
 }

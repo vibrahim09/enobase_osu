@@ -44,3 +44,4 @@ src/lib/functions.tests.ts
 enobase_osu/jest.config.js
 bfg.jar
 formula-engine/bfg.jar
+backend/node_modules

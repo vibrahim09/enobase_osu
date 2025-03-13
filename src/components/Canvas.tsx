@@ -14,6 +14,7 @@ import { AIChatSidebar } from '@/components/AIChatSidebar'
 import DatabaseSidebar from '@/components/DatabaseSidebar'
 import {DndProvider, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
+import Graphs from '@/components/Graphs'
 
 
 // Import function metadata for the formula engine
@@ -367,25 +368,50 @@ export function Canvas() {
       console.error('Error fetching table data:', error);
     }
   };
+
+  const handleCreateChart = useCallback((chartData: {
+    type: 'line' | 'bar' | 'pie'
+    name: string
+    data: { 
+      names: string[], 
+      datasets: Array<{
+        label: string
+        values: number[]
+        backgroundColor?: string
+        borderColor?: string
+      }>
+    }
+  }) => {
+    const newChart: CanvasItem = {
+      id: `chart-${Date.now()}`,
+      type: 'chart',
+      position: { x: 100, y: 100 },
+      name: chartData.name,
+      chartType: chartData.type,
+      data: chartData.data
+    }
+    
+    setItems(prev => [...prev, newChart])
+  }, [setItems])
+
   return (
     <ClientOnly>
       <div className="flex">
-        <div className="fixed top-5 right-5 z-10">
+        {/* <div className="fixed top-5 right-5 z-10">
           <DatabaseSidebar onTableClick={handleTableSelect} />
-
-
-        </div> 
+        </div>  */}
         <div className="fixed top-5 left-5 z-10">
           <AIChatSidebar
             onJsonReceived={createGridFromJson}
             getCanvasData={returnCanvasAsJson}
             functionMetadata={FormulaMetadata}
             onCreateFormula={handleCreateFormulaFromLLM}
+            onCreateChart={handleCreateChart}
           />
         </div>
         <div
           ref={canvasRef}
-          className="flex-1 h-screen relative select-none canvas-background"
+          className="flex-1 h-screen relative select-none"
           onClick={handleCanvasClick}
         >
           {/* Export button - positioned in top-right corner */}
@@ -436,6 +462,16 @@ export function Canvas() {
                       onUpdate={(updates) => updateItem(item.id, updates)}
                       onDelete={() => deleteItem(item.id)}
                       onEditingEnd={handleEditingEnd}
+                    />
+                  )
+                case 'chart':
+                  return (
+                    <Graphs
+                      key={item.id}
+                      item={item}
+                      onPositionChange={(position) => updateItem(item.id, { position })}
+                      onDelete={() => deleteItem(item.id)}
+                      onUpdate={(id, updates) => updateItem(id, updates)}
                     />
                   )
                 case 'grid':

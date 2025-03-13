@@ -91,12 +91,30 @@
       scrollbar-width: none;  /* Firefox */
 }
 .canvas-background {
+  position: relative;
   background-image: url('/cool-background.png');
   background-size: cover;
   background-position: center;
+  background-attachment: fixed;
+  background-color: rgba(255, 255, 255, 0.85);
+  background-blend-mode: overlay;
+  min-height: 100vh;
+  width: 100vw;
+}
+
+/* Add a semi-transparent overlay */
+.canvas-background::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+  z-index: 0;
 }
 .ai-chat-sidebar{
   color: brown;
-
 }
 }
