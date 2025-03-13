@@ -1,26 +1,26 @@
 import { OpenAIStream } from '@/lib/openai-stream'
-import {Pool} from 'pg';
+// import {Pool} from 'pg';
  
 
 
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'northwind',
-  password: 'postgres',
-  port: 5432,
-});
+// const pool = new Pool({
+//   user: 'postgres',
+//   host: 'localhost',
+//   database: 'northwind',
+//   password: 'postgres',
+//   port: 5432,
+// });
 
 //export const runtime = 'edge'
 
 
 export async function POST(req: Request) {
   try {
-    const { messages, systemPrompt, canvasData, functionMetadata,lineData,barData,pieData } = await req.json()
-    const dbQuery = `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`;
-    const dbResult = await pool.query(dbQuery);
-    console.log("Result:", dbResult);
-    const dbData = dbResult.rows.map(row => row.table_name);
+    const { messages, systemPrompt, canvasData, functionMetadata, lineData, barData, pieData } = await req.json()
+    // const dbQuery = `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`;
+    // const dbResult = await pool.query(dbQuery);
+    // console.log("Result:", dbResult);
+    // const dbData = dbResult.rows.map(row => row.table_name);
 
 
     // Prepare additional context for the LLM based on the canvas data and function metadata
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     if (canvasData && functionMetadata) {
       enhancedSystemPrompt += `\n\nCanvas Data (available variables and values):\n${JSON.stringify(canvasData, null, 2)}\n\n`
       enhancedSystemPrompt += `Available Functions:\n${JSON.stringify(functionMetadata, null, 2)}\n\n`
-      enhancedSystemPrompt += `Database Data:\n${JSON.stringify(dbData, null, 2)}\n\n`
+      //enhancedSystemPrompt += `Database Data:\n${JSON.stringify(dbData, null, 2)}\n\n`
       enhancedSystemPrompt += `Line Chart Data:\n${JSON.stringify(lineData, null, 2)}\n\n`
       enhancedSystemPrompt += `Bar Chart Data:\n${JSON.stringify(barData, null, 2)}\n\n` 
       enhancedSystemPrompt += `Pie Chart Data:\n${JSON.stringify(pieData, null, 2)}\n\n`
