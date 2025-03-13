@@ -6,34 +6,51 @@ export interface Position {
 export interface GridColumn {
   field: string
   header: string
-  type: 'number' | 'string' | 'date'
+  type: string
 }
 
 export interface GridRow {
-  [key: string]: string | number | Date
+  [key: string]: any
 }
 
-export type CanvasItem = {
+type BaseCanvasItem = {
   id: string
-  type: 'variable' | 'formula' | 'grid'
   position: Position
   name: string
   isNew?: boolean
-} & (
-  | {
-      type: 'variable'
-      value?: string | number | Array<any>
-      variableType?: 'number' | 'list' | 'string' | 'date'
-    }
-  | {
-      type: 'formula'
-      value?: string
-      formula?: string
-      calculateAfterUpdate?: boolean
-    }
-  | {
-      type: 'grid'
-      columns: GridColumn[]
-      rows: GridRow[]
-    }
-)
+}
+
+type VariableItem = BaseCanvasItem & {
+  type: 'variable'
+  value?: string | number | any[]
+  variableType?: 'string' | 'number' | 'list' | 'date'
+}
+
+type FormulaItem = BaseCanvasItem & {
+  type: 'formula'
+  value?: string
+  formula?: string
+  calculateAfterUpdate?: boolean
+}
+
+type GridItem = BaseCanvasItem & {
+  type: 'grid'
+  columns: GridColumn[]
+  rows: GridRow[]
+}
+
+type ChartItem = BaseCanvasItem & {
+  type: 'chart'
+  chartType: 'line' | 'bar' | 'pie'
+  data: {
+    names: string[]
+    datasets: Array<{
+      label: string
+      values: number[]
+      backgroundColor?: string
+      borderColor?: string
+    }>
+  }
+}
+
+export type CanvasItem = VariableItem | FormulaItem | GridItem | ChartItem

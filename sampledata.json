@@ -1,0 +1,70 @@
+
+     [
+      {
+        "id": 101,
+        "name": "Wireless Mouse",
+        "description": "A sleek, ergonomic wireless mouse with long battery life.",
+        "price": 29.99,
+        "currency": "USD",
+        "category": "Electronics",
+        "stock": 120,
+        "brand": "Logitech",
+        "rating": 4.5,
+        "reviews": 235,
+        "tags": ["wireless", "mouse", "electronics", "computer"]
+      },
+      {
+        "id": 102,
+        "name": "Bluetooth Headphones",
+        "description": "Noise-canceling over-ear Bluetooth headphones with superior sound quality.",
+        "price": 89.99,
+        "currency": "USD",
+        "category": "Electronics",
+        "stock": 60,
+        "brand": "Sony",
+        "rating": 4.8,
+        "reviews": 502,
+        "tags": ["bluetooth", "headphones", "audio", "music"]
+      },
+      {
+        "id": 103,
+        "name": "Yoga Mat",
+        "description": "Non-slip yoga mat, ideal for home workouts and fitness enthusiasts.",
+        "price": 19.99,
+        "currency": "USD",
+        "category": "Fitness",
+        "stock": 200,
+        "brand": "Gaiam",
+        "rating": 4.2,
+        "reviews": 180,
+        "tags": ["yoga", "fitness", "exercise", "home workout"]
+      },
+      {
+        "id": 104,
+        "name": "Coffee Maker",
+        "description": "Automatic coffee maker with multiple brewing options and a built-in grinder.",
+        "price": 129.99,
+        "currency": "USD",
+        "category": "Home Appliances",
+        "stock": 35,
+        "brand": "Ninja",
+        "rating": 4.7,
+        "reviews": 310,
+        "tags": ["coffee", "kitchen", "appliances", "brew"]
+      },
+      {
+        "id": 105,
+        "name": "Smartwatch",
+        "description": "Stylish smartwatch with fitness tracking, heart rate monitor, and GPS.",
+        "price": 199.99,
+        "currency": "USD",
+        "category": "Wearables",
+        "stock": 75,
+        "brand": "Apple",
+        "rating": 4.9,
+        "reviews": 740,
+        "tags": ["smartwatch", "fitness", "wearable", "technology"]
+      }
+    ]
+  
+  
