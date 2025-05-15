@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enobase Formula Engine - Capstone Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #ffffff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #000;
+        }
+
+        .hero {
+            padding: 4rem 0;
+            text-align: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 1rem;
+        }
+
+        .hero .subtitle {
+            font-size: 1.25rem;
+            color: #666;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero .tagline {
+            font-size: 1rem;
+            color: #888;
+            font-style: italic;
+        }
+
+        section {
+            padding: 4rem 0;
+        }
+
+        section:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .team-member {
+            text-align: center;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .team-member h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 0.5rem;
+        }
+
+        .team-member p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .email-list {
+            list-style: none;
+        }
+
+        .team-member-email a {
+            color: #333;
+            text-decoration: none;
+        }
+        .team-member-email a:hover {
+            text-decoration: underline;
+        }
+
+        .value-prop {
+            text-align: center;
+        }
+
+        .value-prop p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .feature-card h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            color: #666;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .tech-item {
+            background: #000;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .screenshot {
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            padding: 4rem;
+            text-align: center;
+            margin: 2rem 0;
+            border-radius: 8px;
+        }
+
+        .cta-section {
+            text-align: center;
+            background: #000;
+            color: black;
+            padding: 4rem 0;
+        }
+
+        .cta-section h2 {
+            color: #000;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #000;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: transform 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+
+        footer {
+            background: #f8f9fa;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .contact-info {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .contact-item {
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            section {
+                padding: 2rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo">Enobase Formula Engine</div>
+            <ul class="nav-links">
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#team">Team</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#tech">Technology</a></li>
+                <li><a href="#access">Access</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>AI-Powered Formula Engine</h1>
+            <p class="subtitle">Enabling natural language formula creation for Enobase's Enterprise Resource Planning platform</p>
+            <p class="tagline">Capstone Project - Spring 2025</p>
+        </div>
+    </section>
+
+    <section id="overview" class="value-prop">
+        <div class="container">
+            <h2>Project Overview</h2>
+            <p>Our team developed an innovative formula engine that integrates with Enobase's ERP platform, allowing users to create complex business formulas using natural language queries. The AI agent translates these queries into functional formula UI components, making business logic creation accessible to non-technical users.</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Problem Statement</h3>
+                    <p>Traditional ERP systems require technical expertise to create custom formulas and business logic. This creates a barrier for business users who understand their processes but lack programming skills.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Our Solution</h3>
+                    <p>We built a natural language formula engine that allows users to describe their business logic in plain English, which is then automatically converted into functional formulas with an intuitive UI.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Target Audience</h3>
+                    <p>Business analysts, operations managers, and non-technical users who need to create custom business logic without programming expertise.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="team">
+        <div class="container">
+            <h2>Meet the Team</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <h3>Ibrahim Velasquez</h3>
+                    <p>Project Manager</p>
+                </div>
+                <div class="team-member">
+                    <h3>Michael Akins</h3>
+                    <p>Full-Stack Developer</p>
+                </div>
+                <div class="team-member">
+                    <h3>Mary Nansikombi</h3>
+                    <p>Frontend Developer</p>
+                </div>
+                <div class="team-member">
+                    <h3>Alexandru Perussi</h3>
+                    <p>Backend Developer</p>
+                </div>
+                <div class="team-member">
+                    <h3>Antony Ly</h3>
+                    <p>AI Integration Specialist</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features">
+        <div class="container">
+            <h2>Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Natural Language Processing</h3>
+                    <p>Users can describe complex business logic in plain English, which our system converts into executable formulas.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Dynamic UI Generation</h3>
+                    <p>Automatically creates intuitive, editable formula UI components that update in real-time.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>AI-Powered Translation</h3>
+                    <p>Leverages advanced LLM integration to understand context and intent from user queries.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Database-Level Execution</h3>
+                    <p>Late-project implementation of PLV8 allows formula execution directly within the database for improved performance.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Seamless ERP Integration</h3>
+                    <p>Designed specifically to integrate with Enobase's existing ERP infrastructure and workflow.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Real-Time Preview</h3>
+                    <p>Users can see immediate results as they build and modify formulas through the interface.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="tech">
+        <div class="container">
+            <h2>Technical Implementation</h2>
+            <p style="text-align: center; margin-bottom: 2rem; color: #666;">Built with modern technologies for scalability and performance</p>
+            
+            <div class="tech-stack">
+                <span class="tech-item">Next.js</span>
+                <span class="tech-item">React</span>
+                <span class="tech-item">TypeScript</span>
+                <span class="tech-item">Node.js</span>
+                <span class="tech-item">LLM Integration</span>
+                <span class="tech-item">PLV8</span>
+                <span class="tech-item">PostgreSQL</span>
+            </div>
+
+            <div class="features-grid" style="margin-top: 3rem;">
+                <div class="feature-card">
+                    <h3>Architecture Overview</h3>
+                    <p>The system consists of a React frontend that communicates with a Next.js backend, which processes natural language through LLM APIs and generates formula components dynamically.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Key Challenges</h3>
+                    <p>Translating ambiguous natural language into precise business logic, ensuring formula accuracy, and maintaining performance with real-time updates.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Solutions</h3>
+                    <p>Implemented robust prompt engineering, validation layers, and introduced database-level formula execution using PLV8 for enhanced performance.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="screenshot">
+        <div class="container">
+            <h2>Project Demo</h2>
+            <div style="background: #f0f0f0; border: 2px dashed #ccc; padding: 4rem; text-align: center; margin: 2rem 0; border-radius: 8px;">
+                <img src="demo-screenshot.png" alt="Project Demo Screenshot" style="max-width: 100%; border-radius: 8px; margin-top: 1rem;">
+                <p style="color: #888; font-size: 1.1rem;">Formula Engine Interface Screenshot</p>
+                <p style="color: #999; margin-top: 1rem;">Live demo available during presentation</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="access" class="cta-section">
+        <div class="container">
+            <h2>Access & Usage</h2>
+            <p style="margin-bottom: 2rem;">Get started with our formula engine integration</p>
+            
+            <div style="background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 8px; margin: 2rem 0;">
+                <h3 style="margin-bottom: 1rem;">Installation Requirements</h3>
+                <ul style="text-align: left; max-width: 600px; margin: 0 auto;">
+                    <li>Node.js 18 or higher</li>
+                    <li>PostgreSQL with PLV8 extension</li>
+                    <li>Enobase platform access</li>
+                    <li>API keys for LLM integration</li>
+                </ul>
+            </div>
+            
+            <a href="#" class="cta-button">View Documentation</a>
+            <a href="#" class="cta-button" style="margin-left: 1rem;">GitHub Repository</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <h2>Contact Us</h2>
+            <div class="contact-item">
+                <strong>Team Contacts:</strong>
+                <ul class="email-list">
+                    <li class="team-member-email"><a href="mailto:velasqui@oregonstate.edu">Ibrahim Velasquez</a></li>
+                    <li class="team-member-email"><a href="mailto:akinsm@oregonstate.edu">Michael Akins</a></li>
+                    <li class="team-member-email"><a href="mailto:nansikom@oregonstate.edu">Mary Nansikombi</a></li>
+                    <li class="team-member-email"><a href="mailto:perussia@oregonstate.edu">Alexandru Perussi</a></li>
+                    <li class="team-member-email"><a href="mailto:lyant@oregonstate.edu">Antony Ly</a></li>
+                </ul>
+            </div>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <strong>Project Timeline:</strong> Spring 2025 Capstone
+                </div>
+                <div class="contact-item">
+                    <strong>Status:</strong> Completed
+                </div>
+            </div>
+            <p style="margin-top: 2rem; color: #666;">For questions about this project, please reach out to any of our team members listed above.</p>
+        </div>
+    </footer>
+</body>
+</html>
