@@ -3,43 +3,33 @@ export interface Position {
   y: number
 }
 
-export interface GridColumn {
-  field: string
-  header: string
-  type: string
-}
-
-export interface GridRow {
-  [key: string]: any
-}
-
-type BaseCanvasItem = {
+export type BaseCanvasItem = {
   id: string
   position: Position
   name: string
   isNew?: boolean
 }
 
-type VariableItem = BaseCanvasItem & {
+export type VariableItem = BaseCanvasItem & {
   type: 'variable'
   value?: string | number | any[]
   variableType?: 'string' | 'number' | 'list' | 'date'
 }
 
-type FormulaItem = BaseCanvasItem & {
+export type FormulaItem = BaseCanvasItem & {
   type: 'formula'
   value?: string
   formula?: string
   calculateAfterUpdate?: boolean
 }
 
-type GridItem = BaseCanvasItem & {
+export type GridItem = BaseCanvasItem & {
   type: 'grid'
   columns: GridColumn[]
   rows: GridRow[]
 }
 
-type ChartItem = BaseCanvasItem & {
+export type ChartItem = BaseCanvasItem & {
   type: 'chart'
   chartType: 'line' | 'bar' | 'pie'
   data: {
@@ -54,3 +44,11 @@ type ChartItem = BaseCanvasItem & {
 }
 
 export type CanvasItem = VariableItem | FormulaItem | GridItem | ChartItem
+
+export type GridColumn = {
+  field: string
+  header: string
+  type: string
+}
+
+export type GridRow = Record<string, any>
