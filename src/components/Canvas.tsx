@@ -1,40 +1,34 @@
 "use client";
 
-
 import { Suspense } from 'react'
 import { useState, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
-import { Position, CanvasItem } from '@/types/index'
+import { Position, CanvasItem, VariableItem, FormulaItem, GridItem, ChartItem } from '@/types/index'
 import { ClientOnly } from './ClientOnly'
-import { FunctionSquare, LucideVariable, PlusIcon, TableIcon, Download } from 'lucide-react'
+import { FunctionSquare, LucideVariable, PlusIcon, TableIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AIChatSidebar } from '@/components/AIChatSidebar'
 import DatabaseSidebar from '@/components/DatabaseSidebar'
-import {DndProvider, useDrop } from 'react-dnd'
+import { DndProvider, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import Graphs from '@/components/Graphs'
 
-
 // Import function metadata for the formula engine
 import { functionMetadata as FormulaMetadata } from '@/lib/formula-metadata'
-
 
 const Variable = dynamic(() => import('@/components/Variable').then(mod => mod.Variable), {
   ssr: false
 })
 
-
 const FormulaEngine = dynamic(() => import('@/components/FormulaEngine').then(mod => mod.FormulaEngine), {
   ssr: false
 })
 
-
 const DataGrid = dynamic(() => import('@/components/DataGrid').then(mod => mod.DataGrid), {
   ssr: false
 })
-
 
 export function Canvas() {
   const [items, setItems] = useLocalStorage<CanvasItem[]>('canvas-items', [])
@@ -42,12 +36,10 @@ export function Canvas() {
   const [ignoreNextClick, setIgnoreNextClick] = useState(false)
   const canvasRef = useRef<HTMLDivElement>(null)
 
-
   // Filter out linked variables for rendering
   const visibleItems = items.filter(item => !item.id.startsWith('linked-'))
   // Get all variables (including linked ones) for formula calculations
-  const allVariables = items.filter(item => item.type === 'variable')
-
+  const allVariables = items.filter((item): item is VariableItem => item.type === 'variable')
 
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
     if (ignoreNextClick) {
@@ -55,22 +47,18 @@ export function Canvas() {
       return
     }
 
-
     if (e.target === canvasRef.current) {
       setMenuPosition({ x: e.clientX + 50, y: e.clientY })
     }
   }, [ignoreNextClick])
 
-
   const handleMenuClose = useCallback(() => {
     setMenuPosition(null)
   }, [])
 
-
   const handleEditingEnd = useCallback(() => {
     setIgnoreNextClick(true)
   }, [])
-
 
   const updateItemPosition = useCallback((id: string, position: Position) => {
     setItems(prevItems =>
@@ -80,22 +68,22 @@ export function Canvas() {
     )
   }, [setItems])
 
-
   const updateItem = useCallback((id: string, updates: Partial<CanvasItem> & { linkedVariable?: CanvasItem }) => {
     setItems(prevItems => {
       const newItems = [...prevItems]
       const itemIndex = newItems.findIndex(item => item.id === id)
      
       if (itemIndex !== -1) {
-        // Update the main item
-        newItems[itemIndex] = { ...newItems[itemIndex], ...updates }
+        const currentItem = newItems[itemIndex]
+        // Update the main item while preserving its type
+        newItems[itemIndex] = { ...currentItem, ...updates } as CanvasItem
        
         // Handle linked variable
         if (updates.linkedVariable) {
           const linkedVarIndex = newItems.findIndex(item => item.id === updates.linkedVariable?.id)
           if (linkedVarIndex !== -1) {
             // Update existing linked variable
-            newItems[linkedVarIndex] = { ...updates.linkedVariable }
+            newItems[linkedVarIndex] = updates.linkedVariable
           } else {
             // Add new linked variable
             newItems.push(updates.linkedVariable)
@@ -107,137 +95,105 @@ export function Canvas() {
     })
   }, [setItems])
 
-
   const createVariable = useCallback(() => {
     if (!menuPosition) return
    
-    setItems(prevItems => [...prevItems, {
+    const newVariable: VariableItem = {
       id: `var-${Date.now()}`,
       type: 'variable',
       position: menuPosition,
       name: 'Variable',
       value: '',
       isNew: true
-    }])
+    }
+    setItems(prevItems => [...prevItems, newVariable])
     setMenuPosition(null)
   }, [menuPosition, setItems])
-
 
   const createFormula = useCallback(() => {
     if (!menuPosition) return
    
-    setItems(prevItems => [...prevItems, {
+    const newFormula: FormulaItem = {
       id: `formula-${Date.now()}`,
       type: 'formula',
       position: menuPosition,
-      name: 'Formula'
-    }])
+      name: 'Formula',
+      formula: ''
+    }
+    setItems(prevItems => [...prevItems, newFormula])
     setMenuPosition(null)
   }, [menuPosition, setItems])
 
-
-  const handleCreateVariable = useCallback((gridId: string, variable: Partial<CanvasItem>) => {
-    const newVariable: CanvasItem = {
+  const handleCreateVariable = useCallback((gridId: string, variable: Partial<VariableItem>) => {
+    if (!variable.name) return
+    
+    const newVariable: VariableItem = {
       id: `var-${Date.now()}`,
-      ...variable,
-      position: variable.position || { x: 100, y: 100 }
+      type: 'variable',
+      name: variable.name,
+      position: variable.position || { x: 100, y: 100 },
+      value: variable.value || '',
+      variableType: variable.variableType
     }
    
     setItems(prev => [...prev, newVariable])
   }, [setItems])
 
-
   // Helper function to trigger calculation on a formula
   const calculateResult = useCallback((formulaId: string) => {
-    // Find the calculate button in the formula component and click it
-    const formulaElement = document.querySelector(`[data-id="${formulaId}"]`);
+    const formulaElement = document.querySelector(`[data-id="${formulaId}"]`)
     if (formulaElement) {
-      const calculateButton = formulaElement.querySelector('button');
+      const calculateButton = formulaElement.querySelector('button')
       if (calculateButton && calculateButton instanceof HTMLButtonElement) {
-        calculateButton.click();
+        calculateButton.click()
       }
     }
-  }, []);
+  }, [])
 
-
-  // New function to handle formula creation from LLM
   const handleCreateFormulaFromLLM = useCallback((formulaString: string, variableNames: string[]) => {
-    // Create the formula component with a fixed position
-    const newFormula: CanvasItem = {
+    const newFormula: FormulaItem = {
       id: `formula-${Date.now()}`,
       type: 'formula',
       name: 'Generated Formula',
-      position: {
-        x: 700,  // Fixed position
-        y: 700
-      }
+      position: { x: 700, y: 700 },
+      formula: ''
     }
    
-    // Add the formula to the canvas
     setItems(prev => [...prev, newFormula])
    
-    // We need to wait for the formula to be created before setting its value
     setTimeout(() => {
-      // Implement typewriter effect using React state updates
-      let currentIndex = 0;
-      const typingSpeed = 50; // milliseconds per character
+      let currentIndex = 0
+      const typingSpeed = 50
      
       const typeNextChar = () => {
         if (currentIndex <= formulaString.length) {
-          // Get the partial formula
-          const partialFormula = formulaString.substring(0, currentIndex);
+          const partialFormula = formulaString.substring(0, currentIndex)
+          updateItem(newFormula.id, { formula: partialFormula })
+          currentIndex++
          
-          // Update the formula component with the partial text
-          updateItem(newFormula.id, {
-            formula: partialFormula
-          });
-         
-          // Move to next character
-          currentIndex++;
-         
-          // Continue typing if not finished
           if (currentIndex <= formulaString.length) {
-            setTimeout(typeNextChar, typingSpeed);
+            setTimeout(typeNextChar, typingSpeed)
           } else {
-            // Typing is complete - ensure the final value is set correctly
-            console.log("Typing complete, setting final formula:", formulaString);
-           
-            // First, set the complete formula without triggering calculation
-            updateItem(newFormula.id, {
-              formula: formulaString
-            });
-           
-            // Then wait a moment to ensure the formula is processed
+            updateItem(newFormula.id, { formula: formulaString })
             setTimeout(() => {
-              console.log("Formula set, preparing to calculate...");
-             
-              // Now trigger the calculation after a delay
-              setTimeout(() => {
-                console.log("Triggering calculation now");
-                calculateResult(newFormula.id);
-              }, 1000); // 1 second delay before calculation
-            }, 500); // 500ms delay after setting formula
+              setTimeout(() => calculateResult(newFormula.id), 1000)
+            }, 500)
           }
         }
-      };
+      }
      
-      // Start the typewriter effect after a short delay
-      setTimeout(typeNextChar, 500);
-    }, 500);
-   
+      setTimeout(typeNextChar, 500)
+    }, 500)
   }, [setItems, updateItem, calculateResult])
 
+  const createGrid = useCallback(() => {
+    if (!menuPosition) return
 
-  const createGrid = () => {
-    const id = `grid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    const newGrid: CanvasItem = {
-      id,
+    const newGrid: GridItem = {
+      id: `grid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: 'grid',
       name: 'New Grid',
-      position: {
-        x: menuPosition?.x || 100,
-        y: menuPosition?.y || 100
-      },
+      position: menuPosition,
       isNew: true,
       columns: [
         { field: 'column1', header: 'Column 1', type: 'string' },
@@ -251,8 +207,7 @@ export function Canvas() {
    
     setItems(prev => [...prev, newGrid])
     setMenuPosition(null)
-  }
-
+  }, [menuPosition, setItems])
 
   const deleteItem = useCallback((id: string) => {
     setItems(prevItems => {
@@ -267,7 +222,6 @@ export function Canvas() {
     })
   }, [setItems])
 
-
   const exportCanvasToJson = useCallback(() => {
     // Create a simplified version of the items without position data and formulas
     const simplifiedItems = items
@@ -276,7 +230,6 @@ export function Canvas() {
         const { position, ...itemWithoutPosition } = item
         return itemWithoutPosition
       })
-
 
     // Create and download the JSON file
     const dataStr = JSON.stringify(simplifiedItems, null, 2)
@@ -292,7 +245,6 @@ export function Canvas() {
     URL.revokeObjectURL(url)
   }, [items])
 
-
   const returnCanvasAsJson = useCallback(() => {
     // Create a simplified version of the items without position data and formulas
     const simplifiedItems = items
@@ -302,21 +254,19 @@ export function Canvas() {
         return itemWithoutPosition
       })
 
-
     return simplifiedItems
   }, [items])
 
-
-  const createGridFromJson = useCallback((jsonData: any) => {
-    const id = `grid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    const newGrid: CanvasItem = {
-      id,
+  const createGridFromJson = useCallback((jsonData: {
+    name?: string
+    columns?: Array<{ field: string; header: string; type: string }>
+    rows?: Array<Record<string, any>>
+  }) => {
+    const newGrid: GridItem = {
+      id: `grid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: 'grid',
       name: jsonData.name || 'Imported Grid',
-      position: {
-        x: 100,  // Default position
-        y: 100
-      },
+      position: { x: 100, y: 100 },
       columns: jsonData.columns || [
         { field: 'column1', header: 'Column 1', type: 'string' },
         { field: 'column2', header: 'Column 2', type: 'number' }
@@ -328,7 +278,8 @@ export function Canvas() {
     }
    
     setItems(prev => [...prev, newGrid])
-  }, [setItems]);
+  }, [setItems])
+
   const handleTableSelect = async (table: string) => {
     console.log("Table selected:", table);
     try {
@@ -373,7 +324,7 @@ export function Canvas() {
     type: 'line' | 'bar' | 'pie'
     name: string
     data: { 
-      names: string[], 
+      names: string[]
       datasets: Array<{
         label: string
         values: number[]
@@ -382,7 +333,7 @@ export function Canvas() {
       }>
     }
   }) => {
-    const newChart: CanvasItem = {
+    const newChart: ChartItem = {
       id: `chart-${Date.now()}`,
       type: 'chart',
       position: { x: 100, y: 100 },
@@ -397,9 +348,6 @@ export function Canvas() {
   return (
     <ClientOnly>
       <div className="flex">
-        {/* <div className="fixed top-5 right-5 z-10">
-          <DatabaseSidebar onTableClick={handleTableSelect} />
-        </div>  */}
         <div className="fixed top-5 left-5 z-10">
           <AIChatSidebar
             onJsonReceived={createGridFromJson}
@@ -411,12 +359,9 @@ export function Canvas() {
         </div>
         <div
           ref={canvasRef}
-          className="flex-1 h-screen relative select-none"
+          className="flex-1 h-screen relative select-none bg-white dark:bg-neutral-950"
           onClick={handleCanvasClick}
         >
-          {/* Export button - positioned in top-right corner */}
-          
-
 
           {visibleItems.length === 0 && (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-muted-foreground space-y-2 pointer-events-none">
@@ -435,7 +380,6 @@ export function Canvas() {
               </div>
             </div>
           )}
-
 
           <Suspense fallback={null}>
             {visibleItems.map(item => {
@@ -492,7 +436,6 @@ export function Canvas() {
               }
             })}
           </Suspense>
-
 
           {menuPosition && (
             <DropdownMenu defaultOpen onOpenChange={handleMenuClose}>

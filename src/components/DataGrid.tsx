@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { X as XIcon, Table as TableIcon, Plus, Upload, Variable as VariableIcon, PlusIcon } from 'lucide-react'
 import { useDrag } from '@/hooks/useDrag'
-import { CanvasItem, Position } from '@/types'
+import { CanvasItem, Position, VariableItem, GridItem, GridRow } from '@/types'
 import { cn } from '@/lib/utils'
 import Papa from 'papaparse'
 import {
@@ -19,349 +19,169 @@ import {
 import Graphs from './Graphs'
 
 interface DataGridProps {
-  item: CanvasItem
+  item: GridItem
   onPositionChange: (position: Position) => void
-  onUpdate: (updates: Partial<CanvasItem>) => void
+  onUpdate: (updates: Partial<GridItem>) => void
   onDelete: () => void
   onEditingEnd: () => void
-  onCreateVariable?: (variable: Partial<CanvasItem>) => void
+  onCreateVariable?: (variable: Partial<VariableItem>) => void
   isNew?: boolean
 }
 
-const DataGrid = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, onCreateVariable, isNew }: DataGridProps) => {
-  const [isEditing, setIsEditing] = useState(isNew)
-  const [isEditingName, setIsEditingName] = useState(isNew)
-  const [showGraphs, setShowGraphs] = useState(false)
-  const [selectedColumn, setSelectedColumn] = useState<string | null>(null)
-  const nameInputRef = useRef<HTMLInputElement>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
+export function DataGrid({
+  item,
+  onPositionChange,
+  onUpdate,
+  onDelete,
+  onEditingEnd,
+  onCreateVariable,
+  isNew
+}: DataGridProps) {
   const { position, startDrag } = useDrag({
     initialPosition: item.position,
-    onDragEnd: onPositionChange,
-    disabled: isEditing,
+    onDragEnd: onPositionChange
   })
 
+  const [isEditing, setIsEditing] = useState(isNew)
+  const [name, setName] = useState(item.name)
+  const [rows, setRows] = useState<GridRow[]>(item.rows)
+  const [columns, setColumns] = useState(item.columns)
+
   useEffect(() => {
-    if (isEditingName) {
-      nameInputRef.current?.focus()
-      nameInputRef.current?.select()
+    if (!isEditing && (name !== item.name || rows !== item.rows || columns !== item.columns)) {
+      onUpdate({
+        name,
+        rows,
+        columns
+      })
     }
-  }, [isEditingName])
+  }, [isEditing, name, rows, columns, item.name, item.rows, item.columns, onUpdate])
 
-  const defaultColumns = [
-    { field: 'column1', header: 'Column 1', type: 'string' },
-    { field: 'column2', header: 'Column 2', type: 'number' }
-  ]
-
-  const defaultRows = [
-    { column1: 'Row 1', column2: 1 },
-    { column1: 'Row 2', column2: 2 }
-  ]
-
-  const columns = item.columns || defaultColumns
-  const rows = item.rows || defaultRows
-
-  const handleAddRow = () => {
-    const newRow = columns.reduce((acc, col) => {
-      acc[col.field] = col.type === 'number' ? 0 : ''
-      return acc
-    }, {} as Record<string, any>)
-
-    onUpdate({
-      rows: [...rows, newRow]
-    })
-  }
-
-  const handleCellChange = (rowIndex: number, field: string, value: string) => {
-    const newRows = [...rows]
-    const column = columns.find(col => col.field === field)
-    newRows[rowIndex][field] = column?.type === 'number' ? Number(value) : value
-    
-    onUpdate({
-      rows: newRows
-    })
-  }
-
-  const handleNameChange = (newName: string) => {
-    onUpdate({ name: newName })
-  }
-
-  const handleNameSubmit = () => {
-    setIsEditingName(false)
-    onEditingEnd()
-  }
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!isEditing) {
-      startDrag(e)
-    }
-  }
-
-  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (!file) return
-
-    // Get filename without extension for the title
-    const title = file.name.replace(/\.[^/.]+$/, '')
 
     Papa.parse(file, {
       complete: (results) => {
-        if (results.data.length === 0) return
+        if (results.data && Array.isArray(results.data) && results.data.length > 0) {
+          const headers = results.data[0] as string[]
+          const newColumns = headers.map(header => ({
+            field: header.toLowerCase().replace(/\s+/g, '_'),
+            header,
+            type: 'string'
+          }))
 
-        // Get headers from first row
-        const headers = results.data[0] as string[]
-        
-        // Create columns configuration
-        const newColumns = headers.map((header, index) => ({
-          field: `column${index + 1}`,
-          header: header,
-          // Try to detect if the column contains numbers
-          type: results.data.slice(1).every(row => 
-            !isNaN(Number(row[index])) && row[index] !== ''
-          ) ? 'number' : 'string'
-        }))
-
-        // Create rows from data (skip header row)
-        const newRows = results.data.slice(1)
-          .filter(row => row.some(cell => cell !== '')) // Filter out empty rows
-          .map(row => {
-            const rowData: Record<string, any> = {}
-            row.forEach((cell, index) => {
-              const column = newColumns[index]
-              rowData[column.field] = column.type === 'number' ? 
-                (cell === '' ? 0 : Number(cell)) : 
-                cell
+          const newRows = (results.data.slice(1) as string[][]).map((row) => {
+            const newRow: Record<string, unknown> = {}
+            headers.forEach((header, index) => {
+              newRow[header.toLowerCase().replace(/\s+/g, '_')] = row[index]
             })
-            return rowData
+            return newRow as GridRow
           })
 
-        onUpdate({
-          name: title,  // Set the name to the CSV filename
-          columns: newColumns,
-          rows: newRows
-        })
-      },
-      error: (error) => {
-        console.error('Error parsing CSV:', error)
+          setColumns(newColumns)
+          setRows(newRows)
+        }
       }
     })
-
-    // Reset the input so the same file can be uploaded again
-    e.target.value = ''
   }
 
-  const handleJsonUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      try {
-        const jsondata = JSON.parse(event.target?.result as string)
-        if (!Array.isArray(jsondata) || jsondata.length === 0|| typeof jsondata[0] !== 'object') {
-          throw new Error('Invalid JSON data')
-        }
-        const newColumns = Object.keys(jsondata[0]).map((key, index) => ({
-          field: `column${index + 1}`,
-          header: key,
-          type: typeof jsondata[0][key] === 'number' ? 'number' : 'string'
-
-        }))
-        const newRows = jsondata.map((row: any) => {
-          const rowData: Record<string, any> = {}
-          Object.keys(row).forEach((key, index) => {
-            const column = newColumns[index]
-            if(column){
-            rowData[column.field] = column.type === 'number' ? 
-              (row[key] === '' ? 0 : Number(row[key])) : 
-              row[key]
-            }
-          })
-          return rowData
-        })
-          onUpdate({
-            name: file.name.replace(/\.[^/.]+$/, ''),
-            columns: newColumns,
-            rows: newRows
-          })
-          saveDataToDatabase(file.name.replace(/\.[^/.]+$/, ''), newColumns, newRows)
-        } catch (error) {
-          console.error('Error parsing JSON:', error)
-
-
-        }
-      }
-        reader.readAsText(file)
-        e.target.value = ''
-      }
-      const saveDataToDatabase =  async (name: string, columns: any[], rows: any[]) => {
-        try {
-          const response = await fetch('/api/another-api', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name,
-              columns,
-              rows
-            })
-          })
-          if (!response.ok) {throw new Error('Failed to save data to database')
-        } console.log('Data saved to database')
-      } catch (error) {
-        console.error('Failed to save data to database:', error)
-      }
-    }
-
-  
-
-  const handleCreateColumnVariable = (column: { field: string, header: string, type: string }) => {
+  const handleCreateVariable = (row: GridRow, columnIndex: number) => {
     if (!onCreateVariable) return
 
-    // Extract all values from the column
-    const values = rows.map(row => row[column.field])
+    const column = columns[columnIndex]
+    const value = row[column.field]
     
-    // Create a new variable positioned to the right of the grid
-    const cardRect = cardRef.current?.getBoundingClientRect()
-    const newPosition = {
-      x: (cardRect?.right || position.x) + 20,
-      y: position.y
-    }
-
     onCreateVariable({
+      name: `${name}_${column.field}`,
       type: 'variable',
-      name: column.header,
-      variableType: 'list',
-      value: values,
-      position: newPosition
+      value: value,
+      variableType: column.type === 'number' ? 'number' : 'string'
     })
   }
 
   return (
     <Card
-      ref={cardRef}
       className={cn(
-        "absolute w-auto max-w-[700px] shadow-md",
-        !isEditing && "cursor-move",
-        isEditing ? "ring-1 ring-primary" : "hover:ring-1 hover:ring-primary/50"
+        'absolute w-[600px] shadow-md cursor-move',
+        isEditing && 'ring-2 ring-blue-500'
       )}
-      style={{
-        left: position.x,
-        top: position.y
-      }}
-      onMouseDown={handleMouseDown}
-      onClick={(e) => {
-        e.stopPropagation()
-        !isEditing && setIsEditing(true)
-      }}
-      onMouseLeave={() => setIsEditing(false)}
-      data-id={item.id}
-      data-columns={JSON.stringify(columns.map(col => ({ field: col.field, header: col.header })))}
+      style={{ left: position.x, top: position.y }}
+      onMouseDown={startDrag}
     >
       <CardContent className="p-4">
-        <div 
-          className="flex items-center justify-between mb-4 select-none"
-        >
-          <div className="flex items-center flex-1 gap-2">
-            {isEditingName ? (
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <TableIcon className="h-4 w-4" />
+            {isEditing ? (
               <Input
-                ref={nameInputRef}
-                value={item.name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                onBlur={handleNameSubmit}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleNameSubmit()
-                  if (e.key === 'Escape') {
-                    handleNameSubmit()
-                    e.stopPropagation()
-                  }
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={() => {
+                  setIsEditing(false)
+                  onEditingEnd()
                 }}
-                className="h-7 py-1"
-                onClick={(e) => e.stopPropagation()}
+                autoFocus
+                className="h-6 text-sm"
               />
             ) : (
-              <h3 
-                className="flex items-center text-lg font-semibold"
-                onDoubleClick={(e) => {
-                  e.stopPropagation()
-                  setIsEditingName(true)
-                }}
+              <div
+                className="text-sm font-medium cursor-text"
+                onClick={() => setIsEditing(true)}
               >
-                <TableIcon className="mr-2 h-5 w-5" />
-                {item.name}
-              </h3>
+                {name}
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleCsvUpload}
-              className="hidden"
-              id={`csv-upload-${item.id}`}
-            />
-            <label
-              htmlFor={`csv-upload-${item.id}`}
-              className="flex items-center px-2 py-1 text-sm bg-secondary hover:bg-secondary/80 rounded-md cursor-pointer ml-4"
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <label className="cursor-pointer">
+                    <Upload className="h-4 w-4" />
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Upload CSV</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <button
+              className="h-6 w-6 hover:bg-gray-100 rounded-full flex items-center justify-center"
+              onClick={onDelete}
             >
-              <Upload className="h-4 w-4 mr-1" />
-              Import CSV
-            </label>
-
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleJsonUpload}
-              className="hidden"
-              id={`json-upload-${item.id}`}
-            />
-            <label
-              htmlFor={`json-upload-${item.id}`}
-              className="flex items-center px-2 py-1 text-sm bg-secondary hover:bg-secondary/80 rounded-md cursor-pointer"
-              >
-              <Upload className="h-4 w-4 mr-1" />
-              Import JSON
-              </label>
-            <XIcon 
-              className="h-6 w-6 rounded-full hover:cursor-pointer hover:bg-slate-100 p-1"
-              onClick={(e) => {
-                e.stopPropagation()
-                onDelete()
-              }}
-            />
+              <XIcon className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
-        <div onClick={(e) => e.stopPropagation()}>
+        <div className="overflow-auto max-h-[400px]">
           <Table>
             <TableHeader>
               <TableRow>
-                {columns.map(column => (
-                  <TableHead 
-                    key={column.field}
-                    className="group"
-                    onClick={() => setSelectedColumn(column.field)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>{column.header}</span>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              className="bg-gray-400 hover:bg-gray-500 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 "
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleCreateColumnVariable(column)
-                              }}
-                            >
-                              <VariableIcon className="h-3 w-3" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent
-                          className="bg-gray-400 text-white"
-                          >
-                            <p> Create <i>{column.header}</i> variable </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                {columns.map((column, columnIndex) => (
+                  <TableHead key={column.field}>
+                    <div className="flex items-center gap-1">
+                      {column.header}
+                      {onCreateVariable && (
+                        <button
+                          className="h-4 w-4 hover:bg-gray-100 rounded-full flex items-center justify-center"
+                          onClick={() => {
+                            const firstRow = rows[0]
+                            if (firstRow) {
+                              handleCreateVariable(firstRow, columnIndex)
+                            }
+                          }}
+                        >
+                          <VariableIcon className="h-3 w-3" />
+                        </button>
+                      )}
                     </div>
                   </TableHead>
                 ))}
@@ -370,36 +190,19 @@ const DataGrid = ({ item, onPositionChange, onUpdate, onDelete, onEditingEnd, on
             <TableBody>
               {rows.map((row, rowIndex) => (
                 <TableRow key={rowIndex}>
-                  {columns.map(column => (
+                  {columns.map((column) => (
                     <TableCell key={column.field}>
-                      <Input
-                        type={column.type === 'number' ? 'number' : 'text'}
-                        value={row[column.field]}
-                        onChange={(e) => handleCellChange(rowIndex, column.field, e.target.value)}
-                        className="h-8"
-                      />
+                      {String(row[column.field])}
                     </TableCell>
                   ))}
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mt-2"
-            onClick={handleAddRow}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Row
-          </Button>
-
         </div>
       </CardContent>
     </Card>
   )
 }
 
-export { DataGrid }
 export default DataGrid 
